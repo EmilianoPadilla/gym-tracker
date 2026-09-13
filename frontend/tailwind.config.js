@@ -4,12 +4,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        charcoal: "#1D1A17",
-        panel: "#26221E",
-        panelraised: "#2F2A25",
-        hairline: "#3A3630",
+        charcoal: "#0F1626",
+        panel: "#1A2445",
+        panelraised: "#212C58",
+        hairline: "#2C3968",
         chalk: "#EDE7DD",
-        chalkdim: "#A69F92",
+        chalkdim: "#9AA3C2",
         brass: "#1a369c",
         brasslight: "#7586c3",
       },

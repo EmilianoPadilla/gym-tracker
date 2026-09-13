@@ -53,11 +53,11 @@ function MetricChart({
         <div className="h-40 -ml-2">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={points} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#3A3630" />
-              <XAxis dataKey="date" tick={{ fill: "#A69F92", fontSize: 11 }} axisLine={{ stroke: "#3A3630" }} />
-              <YAxis tick={{ fill: "#A69F92", fontSize: 11 }} axisLine={{ stroke: "#3A3630" }} domain={["auto", "auto"]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2C3968" />
+              <XAxis dataKey="date" tick={{ fill: "#9AA3C2", fontSize: 11 }} axisLine={{ stroke: "#2C3968" }} />
+              <YAxis tick={{ fill: "#9AA3C2", fontSize: 11 }} axisLine={{ stroke: "#2C3968" }} domain={["auto", "auto"]} />
               <Tooltip
-                contentStyle={{ background: "#26221E", border: "1px solid #3A3630", borderRadius: 8 }}
+                contentStyle={{ background: "#1A2445", border: "1px solid #2C3968", borderRadius: 8 }}
                 labelStyle={{ color: "#EDE7DD" }}
               />
               <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={{ r: 3 }} />

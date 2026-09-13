@@ -3,8 +3,8 @@
   "short_name": "Gym",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1D1A17",
-  "theme_color": "#1D1A17",
+  "background_color": "#0F1626",
+  "theme_color": "#0F1626",
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
