@@ -67,15 +67,20 @@ def get_logs(
 @router.get("/today", response_model=List[schemas.ExerciseWithStreak])
 def get_today(
     days_back: int = 30,
+    day_of_week: int | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
     """
-    The home screen: today's exercises (based on the server's weekday), each with
-    its current streak and the last `days_back` days of history for the horizontal scroll.
-    Python's date.weekday(): Monday=0 ... Sunday=6, matching our day_of_week column.
+    The home screen: today's exercises (based on the CLIENT's local weekday,
+    passed in as day_of_week), each with its current streak and the last
+    `days_back` days of history for the horizontal scroll.
+
+    Falls back to the server's own clock only if the client didn't send one -
+    the server runs on UTC, so relying on it directly is wrong for anyone west
+    of UTC in the evening (their local day has not rolled over yet server-side).
     """
-    today_dow = date.today().weekday()
+    today_dow = day_of_week if day_of_week is not None else date.today().weekday()
     exercises = (
         db.query(models.Exercise)
         .filter(models.Exercise.user_id == current_user.id, models.Exercise.day_of_week == today_dow)

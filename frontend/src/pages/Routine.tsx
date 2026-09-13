@@ -4,6 +4,7 @@ import { Reorder, useDragControls } from "framer-motion";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
 import ExercisePicker from "../components/ExercisePicker";
+import { getExerciseImage } from "../data/exerciseLibrary";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -31,21 +32,36 @@ function ExerciseRow({
   onRemove: (id: number) => void;
 }) {
   const controls = useDragControls();
+  const image = getExerciseImage(ex.name);
 
   return (
     <Reorder.Item
       value={ex}
       dragListener={false}
       dragControls={controls}
-      className="flex items-center justify-between py-3 border-t border-hairline first:border-t-0 bg-charcoal"
+      className="flex items-center justify-between py-3 border-t border-hairline first:border-t-0 bg-charcoal select-none"
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div
-          onPointerDown={(e) => controls.start(e)}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            controls.start(e);
+          }}
           className="text-chalkdim cursor-grab active:cursor-grabbing touch-none flex-shrink-0 p-1"
         >
           <DragHandleIcon />
         </div>
+        {image ? (
+          <img
+            src={image}
+            alt=""
+            className="w-8 h-8 rounded-md object-cover flex-shrink-0 bg-panel"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-md bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim">
+            {ex.name[0]?.toUpperCase()}
+          </div>
+        )}
         <span className="flex-1 min-w-0 truncate">{ex.name}</span>
       </div>
       <button onClick={() => onRemove(ex.id)} className="text-chalkdim text-xl px-2 flex-shrink-0" aria-label="Remove">

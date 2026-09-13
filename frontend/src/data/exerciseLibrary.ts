@@ -371,6 +371,7 @@ export const EXERCISE_LIBRARY: LibraryExercise[] = [
   { id: "push-up", name: "Push-Up", muscleGroup: "Chest", equipment: "bodyweight", image: "/exercise-images/push-up.webp" },
   { id: "rack-pull", name: "Rack Pull", muscleGroup: "Back", equipment: "barbell", image: "/exercise-images/rack-pull.webp" },
   { id: "rear-delt-fly", name: "Rear Delt Fly", muscleGroup: "Shoulders", equipment: "dumbbell", image: "/exercise-images/rear-delt-fly.webp" },
+  { id: "reverse-pec-deck", name: "Reverse Pec Deck", muscleGroup: "Shoulders", equipment: "machine", image: "/exercise-images/rear-delt-fly.webp" },
   { id: "reverse-crunches", name: "Reverse Crunches", muscleGroup: "Core", equipment: "bodyweight", image: "/exercise-images/reverse-crunches.webp" },
   { id: "reverse-curl", name: "Reverse Curl", muscleGroup: "Arms", equipment: "barbell", image: "/exercise-images/reverse-curl.webp" },
   { id: "reverse-grip-bent-over-row", name: "Reverse Grip Bent Over Row", muscleGroup: "Back", equipment: "barbell", image: "/exercise-images/reverse-grip-bent-over-row.webp" },
@@ -540,4 +541,9 @@ export function searchLibrary(query: string): LibraryExercise[] {
   });
 
   return matches.slice(0, 30);
+}
+const nameToImage = new Map(EXERCISE_LIBRARY.map((ex) => [ex.name.toLowerCase(), ex.image]));
+
+export function getExerciseImage(name: string): string | undefined {
+  return nameToImage.get(name.trim().toLowerCase());
 }

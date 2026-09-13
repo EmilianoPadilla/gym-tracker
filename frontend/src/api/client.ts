@@ -60,7 +60,8 @@ export const api = {
     return data;
   },
 
-  getToday: () => request("/today"),
+  getToday: (dayOfWeek?: number) =>
+    request(`/today${dayOfWeek !== undefined ? `?day_of_week=${dayOfWeek}` : ""}`),
 
   getRoutine: (dayOfWeek?: number) =>
     request(`/exercises${dayOfWeek !== undefined ? `?day_of_week=${dayOfWeek}` : ""}`),
@@ -82,7 +83,12 @@ export const api = {
   addLog: (exerciseId: number, weight: number, reps?: number, sets?: number) =>
     request(`/exercises/${exerciseId}/logs`, {
       method: "POST",
-      body: JSON.stringify({ weight, reps, sets }),
+      body: JSON.stringify({
+        weight,
+        reps,
+        sets,
+        log_date: new Date().toLocaleDateString("en-CA"), // YYYY-MM-DD in the browser's local timezone
+      }),
     }),
 
   getLogs: (exerciseId: number, daysBack = 60) =>

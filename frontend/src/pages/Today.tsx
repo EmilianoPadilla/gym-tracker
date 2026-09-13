@@ -25,7 +25,7 @@ export default function Today() {
   async function load() {
     setLoading(true);
     try {
-      const data = await api.getToday();
+      const data = await api.getToday(dayIndex);
       setExercises(data);
     } finally {
       setLoading(false);
