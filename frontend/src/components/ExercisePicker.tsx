@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { searchLibrary } from "../data/exerciseLibrary";
+import { useLanguage } from "../i18n/LanguageContext";
 
 export default function ExercisePicker({ onAdd }: { onAdd: (name: string) => void }) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState("");
   const results = searchLibrary(query);
   const exactMatch = results.some((r) => r.name.toLowerCase() === query.trim().toLowerCase());
@@ -16,12 +18,12 @@ export default function ExercisePicker({ onAdd }: { onAdd: (name: string) => voi
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search exercises, e.g. Bench pr..."
+        placeholder={t("searchExercisesPlaceholder")}
         className="w-full rounded-lg bg-panel border border-hairline px-3 py-2.5 text-chalk focus:outline-none focus:border-brass"
       />
 
       {query.trim() && (
-        <div className="mt-2 flex flex-col gap-2">
+        <div className="mt-2 flex flex-col gap-2 max-h-[420px] overflow-y-auto">
           {results.map((ex) => (
             <div
               key={ex.id}
@@ -41,13 +43,13 @@ export default function ExercisePicker({ onAdd }: { onAdd: (name: string) => voi
                 onClick={() => handleAdd(ex.name)}
                 className="flex-shrink-0 rounded-lg bg-brass text-charcoal text-xs font-semibold px-3 py-2"
               >
-                Add to routine
+                {t("addToRoutine")}
               </button>
             </div>
           ))}
 
           {results.length === 0 && (
-            <p className="text-chalkdim text-sm px-1">No matches in the exercise library.</p>
+            <p className="text-chalkdim text-sm px-1">{t("noMatches")}</p>
           )}
 
           {!exactMatch && (
@@ -55,7 +57,7 @@ export default function ExercisePicker({ onAdd }: { onAdd: (name: string) => voi
               onClick={() => handleAdd(query.trim())}
               className="text-left text-sm text-chalkdim underline px-1 py-1"
             >
-              Add "{query.trim()}" as a custom exercise
+              {t("addAsCustom")}: "{query.trim()}"
             </button>
           )}
         </div>

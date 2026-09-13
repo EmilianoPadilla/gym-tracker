@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "../api/client";
+import { useLanguage } from "../i18n/LanguageContext";
 
 type LogEntry = { id: number; date: string; weight: number; reps: number | null; sets: number | null };
 
@@ -48,6 +49,7 @@ export default function ExerciseCard({
   exercise: ExerciseWithStreak;
   onLogged: () => void;
 }) {
+  const { t } = useLanguage();
   const [weight, setWeight] = useState(exercise.latest_weight?.toString() ?? "");
   const [saving, setSaving] = useState(false);
 
@@ -86,16 +88,16 @@ export default function ExerciseCard({
           disabled={saving}
           className="h-11 px-4 rounded-lg bg-brass text-charcoal font-semibold text-sm flex-shrink-0 disabled:opacity-60"
         >
-          Save
+          {t("save")}
         </button>
       </div>
 
       <div className="mt-3">
         {!hasHistory ? (
-          <span className="text-chalkdim text-sm">No history yet — log today's weight to start tracking</span>
+          <span className="text-chalkdim text-sm">{t("noHistoryYet")}</span>
         ) : (
           <>
-            <p className="text-xs text-chalkdim mb-1.5">Previous weights</p>
+            <p className="text-xs text-chalkdim mb-1.5">{t("previousWeights")}</p>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {coloredHistory.slice(0, 12).map((h) => (
                 <div

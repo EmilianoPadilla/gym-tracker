@@ -16,9 +16,20 @@ class UserOut(BaseModel):
     email: EmailStr
     name: str
     last_name: str
+    profile_picture: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class UserUpdate(BaseModel):
+    profile_picture: Optional[str] = None
+    name: Optional[str] = None
+    last_name: Optional[str] = None
+
+
+class GoogleLogin(BaseModel):
+    credential: str  # the ID token from Google Identity Services
 
 
 class Token(BaseModel):
@@ -41,6 +52,10 @@ class ExerciseOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ExerciseReorder(BaseModel):
+    order_index: int
 
 
 # ---- Logs ----
@@ -72,3 +87,24 @@ class ExerciseWithStreak(BaseModel):
     latest_date: Optional[date] = None
     streak: int = 0  # consecutive sessions at the same weight
     history: List[LogOut] = []
+
+
+# ---- Body metrics (smart scale readings) ----
+class BodyMetricCreate(BaseModel):
+    weight: Optional[float] = None
+    muscle_mass: Optional[float] = None
+    fat_percentage: Optional[float] = None
+    visceral_fat: Optional[float] = None
+    metric_date: Optional[date] = None  # defaults to today if omitted
+
+
+class BodyMetricOut(BaseModel):
+    id: int
+    date: date
+    weight: Optional[float]
+    muscle_mass: Optional[float]
+    fat_percentage: Optional[float]
+    visceral_fat: Optional[float]
+
+    class Config:
+        from_attributes = True

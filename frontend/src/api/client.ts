@@ -73,6 +73,12 @@ export const api = {
 
   deleteExercise: (id: number) => request(`/exercises/${id}`, { method: "DELETE" }),
 
+  updateExerciseOrder: (id: number, orderIndex: number) =>
+    request(`/exercises/${id}/order`, {
+      method: "PATCH",
+      body: JSON.stringify({ order_index: orderIndex }),
+    }),
+
   addLog: (exerciseId: number, weight: number, reps?: number, sets?: number) =>
     request(`/exercises/${exerciseId}/logs`, {
       method: "POST",
@@ -81,4 +87,19 @@ export const api = {
 
   getLogs: (exerciseId: number, daysBack = 60) =>
     request(`/exercises/${exerciseId}/logs?days_back=${daysBack}`),
+
+  updateProfile: (fields: { profile_picture?: string; name?: string; last_name?: string }) =>
+    request("/auth/me", { method: "PATCH", body: JSON.stringify(fields) }),
+
+  googleLogin: (credential: string) =>
+    request("/auth/google", { method: "POST", body: JSON.stringify({ credential }) }),
+
+  addBodyMetric: (fields: {
+    weight?: number;
+    muscle_mass?: number;
+    fat_percentage?: number;
+    visceral_fat?: number;
+  }) => request("/body-metrics", { method: "POST", body: JSON.stringify(fields) }),
+
+  getBodyMetrics: (daysBack: number) => request(`/body-metrics?days_back=${daysBack}`),
 };

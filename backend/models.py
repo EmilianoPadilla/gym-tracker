@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime, func
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime, Text, func
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -8,12 +8,15 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    password_hash = Column(String, nullable=False)
+    password_hash = Column(String, nullable=True)  # null for Google-only accounts
     name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
+    profile_picture = Column(Text, nullable=True)  # base64 data URL, resized client-side
+    google_id = Column(String, nullable=True, unique=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     exercises = relationship("Exercise", back_populates="owner", cascade="all, delete-orphan")
+    body_metrics = relationship("BodyMetric", back_populates="owner", cascade="all, delete-orphan")
 
 
 class Exercise(Base):
@@ -44,3 +47,19 @@ class Log(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     exercise = relationship("Exercise", back_populates="logs")
+
+
+class BodyMetric(Base):
+    """A single body-composition reading (e.g. from a smart scale) for one date."""
+    __tablename__ = "body_metrics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(Date, nullable=False)
+    weight = Column(Float, nullable=True)
+    muscle_mass = Column(Float, nullable=True)
+    fat_percentage = Column(Float, nullable=True)
+    visceral_fat = Column(Float, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    owner = relationship("User", back_populates="body_metrics")

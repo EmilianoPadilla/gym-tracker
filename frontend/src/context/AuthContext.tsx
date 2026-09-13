@@ -1,14 +1,22 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { api, getToken, clearToken } from "../api/client";
+import { api, setToken, getToken, clearToken } from "../api/client";
 
-type User = { id: number; email: string; name: string; last_name: string };
+type User = {
+  id: number;
+  email: string;
+  name: string;
+  last_name: string;
+  profile_picture: string | null;
+};
 
 type AuthContextType = {
   user: User | null;
   loading: boolean; // true while we check for an existing saved session
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, lastName: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -44,13 +52,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await login(email, password);
   }
 
+  async function loginWithGoogle(credential: string) {
+    const data = await api.googleLogin(credential);
+    setToken(data.access_token);
+    const me = await api.getMe();
+    setUser(me);
+  }
+
+  async function refreshUser() {
+    const me = await api.getMe();
+    setUser(me);
+  }
+
   function logout() {
     clearToken();
     setUser(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, loginWithGoogle, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
