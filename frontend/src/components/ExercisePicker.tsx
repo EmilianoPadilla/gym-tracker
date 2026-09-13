@@ -1,20 +1,5 @@
 import { useState } from "react";
-import { Dumbbell, Weight, Cable, PersonStanding } from "lucide-react";
-import { searchLibrary, type Equipment } from "../data/exerciseLibrary";
-
-function EquipmentIcon({ equipment }: { equipment: Equipment }) {
-  const common = { size: 20, strokeWidth: 1.75 };
-  switch (equipment) {
-    case "dumbbell":
-      return <Dumbbell {...common} />;
-    case "cable":
-      return <Cable {...common} />;
-    case "bodyweight":
-      return <PersonStanding {...common} />;
-    default:
-      return <Weight {...common} />;
-  }
-}
+import { searchLibrary } from "../data/exerciseLibrary";
 
 export default function ExercisePicker({ onAdd }: { onAdd: (name: string) => void }) {
   const [query, setQuery] = useState("");
@@ -42,9 +27,12 @@ export default function ExercisePicker({ onAdd }: { onAdd: (name: string) => voi
               key={ex.id}
               className="flex items-center gap-3 bg-panel border border-hairline rounded-lg px-3 py-2.5"
             >
-              <div className="w-9 h-9 rounded-lg bg-panelraised flex items-center justify-center text-chalkdim flex-shrink-0">
-                <EquipmentIcon equipment={ex.equipment} />
-              </div>
+              <img
+                src={ex.image}
+                alt={ex.name}
+                className="w-12 h-12 rounded-lg object-cover bg-panelraised flex-shrink-0"
+                loading="lazy"
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{ex.name}</p>
                 <p className="text-xs text-chalkdim">{ex.muscleGroup}</p>
@@ -57,6 +45,10 @@ export default function ExercisePicker({ onAdd }: { onAdd: (name: string) => voi
               </button>
             </div>
           ))}
+
+          {results.length === 0 && (
+            <p className="text-chalkdim text-sm px-1">No matches in the exercise library.</p>
+          )}
 
           {!exactMatch && (
             <button

@@ -77,6 +77,13 @@ export default function Routine() {
           </div>
         ))
       )}
+
+      <p className="text-xs text-chalkdim text-center mt-8">
+        Exercise data by{" "}
+        <a href="https://repdb.co" target="_blank" rel="noreferrer" className="underline">
+          RepDB
+        </a>
+      </p>
     </div>
   );
 }
