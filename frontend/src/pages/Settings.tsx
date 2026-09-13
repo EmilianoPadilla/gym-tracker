@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import { api } from "../api/client";
-import { resizeImageToDataUrl } from "../lib/resizeImage";
+import ImageCropperModal from "../components/ImageCropperModal";
 
 export default function Settings() {
   const { user, refreshUser } = useAuth();
@@ -11,14 +11,22 @@ export default function Settings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [pendingImageSrc, setPendingImageSrc] = useState<string | null>(null);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setPendingImageSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = ""; // allow selecting the same file again later
+  }
+
+  async function handleCropConfirm(dataUrl: string) {
+    setPendingImageSrc(null);
     setUploading(true);
     setError("");
     try {
-      const dataUrl = await resizeImageToDataUrl(file);
       await api.updateProfile({ profile_picture: dataUrl });
       await refreshUser();
     } catch {
@@ -90,6 +98,16 @@ export default function Settings() {
           </button>
         </div>
       </div>
+
+      {pendingImageSrc && (
+        <ImageCropperModal
+          imageSrc={pendingImageSrc}
+          onCancel={() => setPendingImageSrc(null)}
+          onConfirm={handleCropConfirm}
+          saveLabel={t("save")}
+          cancelLabel={language === "es" ? "Cancelar" : "Cancel"}
+        />
+      )}
     </div>
   );
 }

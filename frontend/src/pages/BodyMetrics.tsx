@@ -73,6 +73,7 @@ export default function BodyMetrics() {
   const [muscleMass, setMuscleMass] = useState("");
   const [fatPct, setFatPct] = useState("");
   const [visceralFat, setVisceralFat] = useState("");
+  const [entryDate, setEntryDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
 
   async function load() {
@@ -90,20 +91,21 @@ export default function BodyMetrics() {
   }, [range]);
 
   async function handleSave() {
-    const fields: Record<string, number> = {};
+    const fields: Record<string, number | string> = { metric_date: entryDate };
     if (weight) fields.weight = parseFloat(weight);
     if (muscleMass) fields.muscle_mass = parseFloat(muscleMass);
     if (fatPct) fields.fat_percentage = parseFloat(fatPct);
     if (visceralFat) fields.visceral_fat = parseFloat(visceralFat);
-    if (Object.keys(fields).length === 0) return;
+    if (Object.keys(fields).length === 1) return; // only the date, nothing else filled in
 
     setSaving(true);
     try {
-      await api.addBodyMetric(fields);
+      await api.addBodyMetric(fields as any);
       setWeight("");
       setMuscleMass("");
       setFatPct("");
       setVisceralFat("");
+      setEntryDate(new Date().toISOString().slice(0, 10));
       await load();
     } finally {
       setSaving(false);
@@ -128,6 +130,16 @@ export default function BodyMetrics() {
 
       <div className="bg-panel border border-hairline rounded-lg p-4 mb-8">
         <p className="text-sm font-semibold mb-3">{t("logTodaysReading")}</p>
+        <div className="mb-3">
+          <label className="block text-xs text-chalkdim mb-1">{t("date")}</label>
+          <input
+            type="date"
+            value={entryDate}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setEntryDate(e.target.value)}
+            className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brass"
+          />
+        </div>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div>
             <label className="block text-xs text-chalkdim mb-1">{t("weight")} (kg)</label>

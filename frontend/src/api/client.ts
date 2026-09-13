@@ -99,6 +99,7 @@ export const api = {
     muscle_mass?: number;
     fat_percentage?: number;
     visceral_fat?: number;
+    metric_date?: string;
   }) => request("/body-metrics", { method: "POST", body: JSON.stringify(fields) }),
 
   getBodyMetrics: (daysBack: number) => request(`/body-metrics?days_back=${daysBack}`),

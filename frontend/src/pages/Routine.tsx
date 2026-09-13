@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { Reorder, useDragControls } from "framer-motion";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
 import ExercisePicker from "../components/ExercisePicker";
@@ -8,14 +8,60 @@ import ExercisePicker from "../components/ExercisePicker";
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
+type ExerciseItem = { id: number; name: string; day_of_week: number; order_index: number };
+
+function DragHandleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+      <circle cx="6" cy="4" r="1.4" fill="currentColor" />
+      <circle cx="12" cy="4" r="1.4" fill="currentColor" />
+      <circle cx="6" cy="9" r="1.4" fill="currentColor" />
+      <circle cx="12" cy="9" r="1.4" fill="currentColor" />
+      <circle cx="6" cy="14" r="1.4" fill="currentColor" />
+      <circle cx="12" cy="14" r="1.4" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ExerciseRow({
+  ex,
+  onRemove,
+}: {
+  ex: ExerciseItem;
+  onRemove: (id: number) => void;
+}) {
+  const controls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={ex}
+      dragListener={false}
+      dragControls={controls}
+      className="flex items-center justify-between py-3 border-t border-hairline first:border-t-0 bg-charcoal"
+    >
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div
+          onPointerDown={(e) => controls.start(e)}
+          className="text-chalkdim cursor-grab active:cursor-grabbing touch-none flex-shrink-0 p-1"
+        >
+          <DragHandleIcon />
+        </div>
+        <span className="flex-1 min-w-0 truncate">{ex.name}</span>
+      </div>
+      <button onClick={() => onRemove(ex.id)} className="text-chalkdim text-xl px-2 flex-shrink-0" aria-label="Remove">
+        &times;
+      </button>
+    </Reorder.Item>
+  );
+}
+
 export default function Routine() {
   const { language, t } = useLanguage();
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
   const jsDay = new Date().getDay();
   const [activeDay, setActiveDay] = useState(jsDay === 0 ? 6 : jsDay - 1);
-  const [exercises, setExercises] = useState<any[]>([]);
+  const [exercises, setExercises] = useState<ExerciseItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reordering, setReordering] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -42,35 +88,16 @@ export default function Routine() {
     load();
   }
 
-  async function handleMove(index: number, direction: -1 | 1) {
-    const targetIndex = index + direction;
-    if (targetIndex < 0 || targetIndex >= exercises.length) return;
-
-    const current = exercises[index];
-    const target = exercises[targetIndex];
-
-    // Optimistically reorder in the UI immediately so it feels instant, and
-    // swap their order_index values locally too so a second move right after
-    // this one is calculated correctly without waiting on the server.
-    const reordered = [...exercises];
-    reordered[index] = { ...target };
-    reordered[targetIndex] = { ...current };
-    const swappedOrderIndex = reordered[index].order_index;
-    reordered[index].order_index = reordered[targetIndex].order_index;
-    reordered[targetIndex].order_index = swappedOrderIndex;
-    setExercises(reordered);
-    setReordering(true);
-
-    try {
-      await Promise.all([
-        api.updateExerciseOrder(current.id, target.order_index),
-        api.updateExerciseOrder(target.id, current.order_index),
-      ]);
-    } catch {
-      await load(); // something went wrong - resync with the server's actual state
-    } finally {
-      setReordering(false);
-    }
+  // Called by Reorder.Group whenever a drag finishes with a new order.
+  // We persist every item's new order_index in the background - cheap since
+  // routines are short lists, and it keeps the UI feeling instant.
+  async function handleReorder(newOrder: ExerciseItem[]) {
+    setExercises(newOrder);
+    await Promise.all(
+      newOrder.map((ex, i) =>
+        ex.order_index === i ? null : api.updateExerciseOrder(ex.id, i)
+      )
+    );
   }
 
   return (
@@ -108,44 +135,12 @@ export default function Routine() {
         </p>
       ) : (
         <>
-          <p className="text-xs text-chalkdim mt-2 mb-1">{t("useArrowsToReorder")}</p>
-          <AnimatePresence initial={false}>
-            {exercises.map((ex, i) => (
-              <motion.div
-                key={ex.id}
-                layout
-                transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                className="flex items-center justify-between py-3 border-t border-hairline first:border-t-0 bg-charcoal"
-              >
-                <span className="flex-1 min-w-0 truncate">{ex.name}</span>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => handleMove(i, -1)}
-                    disabled={i === 0 || reordering}
-                    className="w-8 h-8 rounded-lg border border-hairline text-chalkdim disabled:opacity-30 flex items-center justify-center"
-                    aria-label="Move up"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    onClick={() => handleMove(i, 1)}
-                    disabled={i === exercises.length - 1 || reordering}
-                    className="w-8 h-8 rounded-lg border border-hairline text-chalkdim disabled:opacity-30 flex items-center justify-center"
-                    aria-label="Move down"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    onClick={() => handleRemove(ex.id)}
-                    className="text-chalkdim text-xl px-2"
-                    aria-label="Remove"
-                  >
-                    &times;
-                  </button>
-                </div>
-              </motion.div>
+          <p className="text-xs text-chalkdim mt-2 mb-1">{t("dragToReorder")}</p>
+          <Reorder.Group axis="y" values={exercises} onReorder={handleReorder}>
+            {exercises.map((ex) => (
+              <ExerciseRow key={ex.id} ex={ex} onRemove={handleRemove} />
             ))}
-          </AnimatePresence>
+          </Reorder.Group>
         </>
       )}
 
