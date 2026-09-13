@@ -59,6 +59,9 @@ export default function Today() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
+          <Link to="/settings" className="text-sm text-chalkdim underline">
+            {t("settings")}
+          </Link>
           <Link to="/routine" className="text-sm text-chalkdim underline">
             {t("addModifyRoutine")}
           </Link>

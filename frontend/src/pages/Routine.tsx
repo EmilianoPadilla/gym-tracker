@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
 import ExercisePicker from "../components/ExercisePicker";
@@ -48,9 +49,15 @@ export default function Routine() {
     const current = exercises[index];
     const target = exercises[targetIndex];
 
+    // Optimistically reorder in the UI immediately so it feels instant, and
+    // swap their order_index values locally too so a second move right after
+    // this one is calculated correctly without waiting on the server.
     const reordered = [...exercises];
-    reordered[index] = target;
-    reordered[targetIndex] = current;
+    reordered[index] = { ...target };
+    reordered[targetIndex] = { ...current };
+    const swappedOrderIndex = reordered[index].order_index;
+    reordered[index].order_index = reordered[targetIndex].order_index;
+    reordered[targetIndex].order_index = swappedOrderIndex;
     setExercises(reordered);
     setReordering(true);
 
@@ -59,7 +66,8 @@ export default function Routine() {
         api.updateExerciseOrder(current.id, target.order_index),
         api.updateExerciseOrder(target.id, current.order_index),
       ]);
-      await load();
+    } catch {
+      await load(); // something went wrong - resync with the server's actual state
     } finally {
       setReordering(false);
     }
@@ -101,39 +109,43 @@ export default function Routine() {
       ) : (
         <>
           <p className="text-xs text-chalkdim mt-2 mb-1">{t("useArrowsToReorder")}</p>
-          {exercises.map((ex, i) => (
-            <div
-              key={ex.id}
-              className="flex items-center justify-between py-3 border-t border-hairline first:border-t-0"
-            >
-              <span className="flex-1 min-w-0 truncate">{ex.name}</span>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button
-                  onClick={() => handleMove(i, -1)}
-                  disabled={i === 0 || reordering}
-                  className="w-8 h-8 rounded-lg border border-hairline text-chalkdim disabled:opacity-30 flex items-center justify-center"
-                  aria-label="Move up"
-                >
-                  ↑
-                </button>
-                <button
-                  onClick={() => handleMove(i, 1)}
-                  disabled={i === exercises.length - 1 || reordering}
-                  className="w-8 h-8 rounded-lg border border-hairline text-chalkdim disabled:opacity-30 flex items-center justify-center"
-                  aria-label="Move down"
-                >
-                  ↓
-                </button>
-                <button
-                  onClick={() => handleRemove(ex.id)}
-                  className="text-chalkdim text-xl px-2"
-                  aria-label="Remove"
-                >
-                  &times;
-                </button>
-              </div>
-            </div>
-          ))}
+          <AnimatePresence initial={false}>
+            {exercises.map((ex, i) => (
+              <motion.div
+                key={ex.id}
+                layout
+                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                className="flex items-center justify-between py-3 border-t border-hairline first:border-t-0 bg-charcoal"
+              >
+                <span className="flex-1 min-w-0 truncate">{ex.name}</span>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => handleMove(i, -1)}
+                    disabled={i === 0 || reordering}
+                    className="w-8 h-8 rounded-lg border border-hairline text-chalkdim disabled:opacity-30 flex items-center justify-center"
+                    aria-label="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => handleMove(i, 1)}
+                    disabled={i === exercises.length - 1 || reordering}
+                    className="w-8 h-8 rounded-lg border border-hairline text-chalkdim disabled:opacity-30 flex items-center justify-center"
+                    aria-label="Move down"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    onClick={() => handleRemove(ex.id)}
+                    className="text-chalkdim text-xl px-2"
+                    aria-label="Remove"
+                  >
+                    &times;
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </>
       )}
 
