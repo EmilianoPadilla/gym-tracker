@@ -19,7 +19,7 @@ export default function ExercisePicker({ onAdd }: { onAdd: (name: string) => voi
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t("searchExercisesPlaceholder")}
-        className="w-full rounded-lg bg-panel border border-hairline px-3 py-2.5 text-chalk focus:outline-none focus:border-brass"
+        className="w-full rounded-lg bg-panel border border-hairline px-3 py-2.5 text-chalk focus:outline-none focus:border-brasslight"
       />
 
       {query.trim() && (
@@ -41,7 +41,7 @@ export default function ExercisePicker({ onAdd }: { onAdd: (name: string) => voi
               </div>
               <button
                 onClick={() => handleAdd(ex.name)}
-                className="flex-shrink-0 rounded-lg bg-brass text-charcoal text-xs font-semibold px-3 py-2"
+                className="flex-shrink-0 rounded-lg bg-brass text-chalk text-xs font-semibold px-3 py-2"
               >
                 {t("addToRoutine")}
               </button>

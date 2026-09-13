@@ -398,6 +398,8 @@ export const EXERCISE_LIBRARY: LibraryExercise[] = [
   { id: "scissor-kicks", name: "Scissor Kicks", muscleGroup: "Core", equipment: "bodyweight", image: "/exercise-images/scissor-kicks.webp" },
   { id: "seated-barbell-overhead-press", name: "Seated Barbell Overhead Press", muscleGroup: "Shoulders", equipment: "barbell", image: "/exercise-images/seated-barbell-overhead-press.webp" },
   { id: "seated-cable-row", name: "Seated Cable Row", muscleGroup: "Back", equipment: "cable", image: "/exercise-images/seated-cable-row.webp" },
+  { id: "chest-supported-row-machine", name: "Chest supported row (machine)", muscleGroup: "Back", equipment: "smith_machine", image: "/exercise-images/chest-supported-row-machine.webp" },
+  { id: "single-arm-cable-row", name: "Single arm cable row", muscleGroup: "Back", equipment: "cable", image: "/exercise-images/single-arm-cable-row.webp" },
   { id: "seated-calf-raise", name: "Seated Calf Raise", muscleGroup: "Legs", equipment: "seated_calf_raise_machine", image: "/exercise-images/seated-calf-raise.webp" },
   { id: "seated-db-press", name: "Seated Dumbbell Shoulder Press", muscleGroup: "Shoulders", equipment: "dumbbell", image: "/exercise-images/seated-db-press.webp" },
   { id: "seated-dumbbell-curl", name: "Seated Dumbbell Curl", muscleGroup: "Arms", equipment: "dumbbell", image: "/exercise-images/seated-dumbbell-curl.webp" },

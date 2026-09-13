@@ -84,7 +84,7 @@ export default function Today() {
             </p>
             <Link
               to="/routine"
-              className="inline-block mt-4 rounded-lg bg-brass text-charcoal font-semibold px-4 py-2.5 text-sm"
+              className="inline-block mt-4 rounded-lg bg-brass text-chalk font-semibold px-4 py-2.5 text-sm"
             >
               {t("addModifyRoutine")}
             </Link>

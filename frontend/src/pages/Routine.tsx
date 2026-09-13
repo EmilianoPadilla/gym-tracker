@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import { Reorder, useDragControls } from "framer-motion";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
+import { useUnits } from "../units/UnitsContext";
 import ExercisePicker from "../components/ExercisePicker";
 import { getExerciseImage } from "../data/exerciseLibrary";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
-type ExerciseItem = { id: number; name: string; day_of_week: number; order_index: number };
+type ExerciseItem = { id: number; name: string; day_of_week: number; order_index: number; preferred_unit: "kg" | "lbs" };
 
 function DragHandleIcon() {
   return (
@@ -27,9 +28,11 @@ function DragHandleIcon() {
 function ExerciseRow({
   ex,
   onRemove,
+  onToggleUnit,
 }: {
   ex: ExerciseItem;
   onRemove: (id: number) => void;
+  onToggleUnit: (id: number, unit: "kg" | "lbs") => void;
 }) {
   const controls = useDragControls();
   const image = getExerciseImage(ex.name);
@@ -64,15 +67,24 @@ function ExerciseRow({
         )}
         <span className="flex-1 min-w-0 truncate">{ex.name}</span>
       </div>
-      <button onClick={() => onRemove(ex.id)} className="text-chalkdim text-xl px-2 flex-shrink-0" aria-label="Remove">
-        &times;
-      </button>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <button
+          onClick={() => onToggleUnit(ex.id, ex.preferred_unit === "kg" ? "lbs" : "kg")}
+          className="text-xs px-2 py-1 rounded-md border border-hairline text-chalkdim font-medium min-w-[38px]"
+        >
+          {ex.preferred_unit}
+        </button>
+        <button onClick={() => onRemove(ex.id)} className="text-chalkdim text-xl px-1" aria-label="Remove">
+          &times;
+        </button>
+      </div>
     </Reorder.Item>
   );
 }
 
 export default function Routine() {
   const { language, t } = useLanguage();
+  const { unit: defaultUnit } = useUnits();
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
   const jsDay = new Date().getDay();
   const [activeDay, setActiveDay] = useState(jsDay === 0 ? 6 : jsDay - 1);
@@ -95,8 +107,13 @@ export default function Routine() {
 
   async function handleAdd(name: string) {
     if (!name) return;
-    await api.addExercise(name, activeDay, exercises.length);
+    await api.addExercise(name, activeDay, exercises.length, defaultUnit);
     load();
+  }
+
+  async function handleToggleUnit(id: number, unit: "kg" | "lbs") {
+    setExercises((prev) => prev.map((ex) => (ex.id === id ? { ...ex, preferred_unit: unit } : ex)));
+    await api.updateExerciseUnit(id, unit);
   }
 
   async function handleRemove(id: number) {
@@ -132,7 +149,7 @@ export default function Routine() {
             onClick={() => setActiveDay(i)}
             className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm border ${
               i === activeDay
-                ? "bg-brass text-charcoal border-brass font-semibold"
+                ? "bg-brass text-chalk border-brass font-semibold"
                 : "border-hairline text-chalkdim"
             }`}
           >
@@ -154,7 +171,7 @@ export default function Routine() {
           <p className="text-xs text-chalkdim mt-2 mb-1">{t("dragToReorder")}</p>
           <Reorder.Group axis="y" values={exercises} onReorder={handleReorder}>
             {exercises.map((ex) => (
-              <ExerciseRow key={ex.id} ex={ex} onRemove={handleRemove} />
+              <ExerciseRow key={ex.id} ex={ex} onRemove={handleRemove} onToggleUnit={handleToggleUnit} />
             ))}
           </Reorder.Group>
         </>

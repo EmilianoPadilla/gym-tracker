@@ -66,10 +66,16 @@ export const api = {
   getRoutine: (dayOfWeek?: number) =>
     request(`/exercises${dayOfWeek !== undefined ? `?day_of_week=${dayOfWeek}` : ""}`),
 
-  addExercise: (name: string, dayOfWeek: number, orderIndex = 0) =>
+  addExercise: (name: string, dayOfWeek: number, orderIndex = 0, preferredUnit: "kg" | "lbs" = "kg") =>
     request("/exercises", {
       method: "POST",
-      body: JSON.stringify({ name, day_of_week: dayOfWeek, order_index: orderIndex }),
+      body: JSON.stringify({ name, day_of_week: dayOfWeek, order_index: orderIndex, preferred_unit: preferredUnit }),
+    }),
+
+  updateExerciseUnit: (id: number, unit: "kg" | "lbs") =>
+    request(`/exercises/${id}/unit`, {
+      method: "PATCH",
+      body: JSON.stringify({ preferred_unit: unit }),
     }),
 
   deleteExercise: (id: number) => request(`/exercises/${id}`, { method: "DELETE" }),

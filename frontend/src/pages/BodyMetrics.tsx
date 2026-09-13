@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
+import { useUnits } from "../units/UnitsContext";
 
 type Range = 30 | 90 | 180 | 365;
 
@@ -25,16 +26,21 @@ function MetricChart({
   label,
   unit,
   color,
+  convert,
 }: {
   data: Metric[];
   dataKey: keyof Metric;
   label: string;
   unit: string;
   color: string;
+  convert?: (v: number) => number;
 }) {
   const points = data
     .filter((d) => d[dataKey] !== null && d[dataKey] !== undefined)
-    .map((d) => ({ date: fmtDate(d.date), value: d[dataKey] as number }));
+    .map((d) => {
+      const raw = d[dataKey] as number;
+      return { date: fmtDate(d.date), value: convert ? convert(raw) : raw };
+    });
 
   return (
     <div className="mb-8">
@@ -65,6 +71,7 @@ function MetricChart({
 
 export default function BodyMetrics() {
   const { t } = useLanguage();
+  const { unit, toDisplay, toKg } = useUnits();
   const [range, setRange] = useState<Range>(90);
   const [data, setData] = useState<Metric[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,11 +99,11 @@ export default function BodyMetrics() {
 
   async function handleSave() {
     const fields: Record<string, number | string> = { metric_date: entryDate };
-    if (weight) fields.weight = parseFloat(weight);
-    if (muscleMass) fields.muscle_mass = parseFloat(muscleMass);
+    if (weight) fields.weight = toKg(parseFloat(weight));
+    if (muscleMass) fields.muscle_mass = toKg(parseFloat(muscleMass));
     if (fatPct) fields.fat_percentage = parseFloat(fatPct);
     if (visceralFat) fields.visceral_fat = parseFloat(visceralFat);
-    if (Object.keys(fields).length === 1) return; // only the date, nothing else filled in
+    if (Object.keys(fields).length === 1) return;
 
     setSaving(true);
     try {
@@ -137,28 +144,28 @@ export default function BodyMetrics() {
             value={entryDate}
             max={new Date().toISOString().slice(0, 10)}
             onChange={(e) => setEntryDate(e.target.value)}
-            className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brass"
+            className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brasslight"
           />
         </div>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div>
-            <label className="block text-xs text-chalkdim mb-1">{t("weight")} (kg)</label>
+            <label className="block text-xs text-chalkdim mb-1">{t("weight")} ({unit})</label>
             <input
               type="number"
               inputMode="decimal"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
-              className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brass"
+              className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brasslight"
             />
           </div>
           <div>
-            <label className="block text-xs text-chalkdim mb-1">{t("muscleMass")} (kg)</label>
+            <label className="block text-xs text-chalkdim mb-1">{t("muscleMass")} ({unit})</label>
             <input
               type="number"
               inputMode="decimal"
               value={muscleMass}
               onChange={(e) => setMuscleMass(e.target.value)}
-              className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brass"
+              className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brasslight"
             />
           </div>
           <div>
@@ -168,7 +175,7 @@ export default function BodyMetrics() {
               inputMode="decimal"
               value={fatPct}
               onChange={(e) => setFatPct(e.target.value)}
-              className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brass"
+              className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brasslight"
             />
           </div>
           <div>
@@ -178,14 +185,14 @@ export default function BodyMetrics() {
               inputMode="decimal"
               value={visceralFat}
               onChange={(e) => setVisceralFat(e.target.value)}
-              className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brass"
+              className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brasslight"
             />
           </div>
         </div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full rounded-lg bg-brass text-charcoal font-semibold py-2.5 disabled:opacity-60"
+          className="w-full rounded-lg bg-brass text-chalk font-semibold py-2.5 disabled:opacity-60"
         >
           {t("save")}
         </button>
@@ -198,7 +205,7 @@ export default function BodyMetrics() {
             onClick={() => setRange(r.value)}
             className={`px-3 py-1.5 rounded-full text-sm border ${
               range === r.value
-                ? "bg-brass text-charcoal border-brass font-semibold"
+                ? "bg-brass text-chalk border-brass font-semibold"
                 : "border-hairline text-chalkdim"
             }`}
           >
@@ -213,8 +220,8 @@ export default function BodyMetrics() {
         <p className="text-chalkdim text-sm text-center py-10">{t("noDataYet")}</p>
       ) : (
         <>
-          <MetricChart data={data} dataKey="weight" label={t("weight")} unit="kg" color="#C9A227" />
-          <MetricChart data={data} dataKey="muscle_mass" label={t("muscleMass")} unit="kg" color="#6FA25E" />
+          <MetricChart data={data} dataKey="weight" label={t("weight")} unit={unit} color="#7586c3" convert={toDisplay} />
+          <MetricChart data={data} dataKey="muscle_mass" label={t("muscleMass")} unit={unit} color="#6FA25E" convert={toDisplay} />
           <MetricChart data={data} dataKey="fat_percentage" label={t("fatPercentage")} unit="%" color="#CB7A32" />
           <MetricChart data={data} dataKey="visceral_fat" label={t("visceralFat")} unit="rating" color="#BD4B3F" />
         </>

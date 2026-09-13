@@ -28,6 +28,7 @@ class Exercise(Base):
     name = Column(String, nullable=False)
     day_of_week = Column(Integer, nullable=False)  # 0=Monday ... 6=Sunday
     order_index = Column(Integer, default=0)
+    preferred_unit = Column(String, default="kg", nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     owner = relationship("User", back_populates="exercises")

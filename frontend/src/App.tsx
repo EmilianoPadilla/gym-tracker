@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { LanguageProvider } from "./i18n/LanguageContext";
+import { UnitsProvider } from "./units/UnitsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -12,6 +13,7 @@ import BodyMetrics from "./pages/BodyMetrics";
 export default function App() {
   return (
     <LanguageProvider>
+      <UnitsProvider>
       <BrowserRouter>
         <AuthProvider>
           <Routes>
@@ -52,6 +54,7 @@ export default function App() {
           </Routes>
         </AuthProvider>
       </BrowserRouter>
+      </UnitsProvider>
     </LanguageProvider>
   );
 }

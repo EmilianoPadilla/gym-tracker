@@ -58,7 +58,7 @@ export default function ImageCropperModal({
           step={0.01}
           value={zoom}
           onChange={(e) => setZoom(parseFloat(e.target.value))}
-          className="w-full accent-brass"
+          className="w-full accent-brasslight"
         />
         <div className="flex gap-3">
           <button
@@ -70,7 +70,7 @@ export default function ImageCropperModal({
           <button
             onClick={handleConfirm}
             disabled={saving}
-            className="flex-1 rounded-lg bg-brass text-charcoal font-semibold py-2.5 disabled:opacity-60"
+            className="flex-1 rounded-lg bg-brass text-chalk font-semibold py-2.5 disabled:opacity-60"
           >
             {saveLabel}
           </button>

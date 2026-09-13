@@ -9,3 +9,20 @@ body {
   color: #EDE7DD;
   font-family: "Work Sans", sans-serif;
 }
+
+/* The layout is mobile-first (narrow centered column), which reads as
+   too small on a full desktop monitor. Bumping the root font size scales
+   every rem-based Tailwind utility (text, padding, gaps, widths) together,
+   so the same design just renders comfortably larger on bigger screens
+   instead of looking like a tiny mobile view floating in empty space. */
+@media (min-width: 768px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 1280px) {
+  html {
+    font-size: 20px;
+  }
+}

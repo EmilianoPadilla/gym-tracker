@@ -10,7 +10,8 @@ export default {
         hairline: "#3A3630",
         chalk: "#EDE7DD",
         chalkdim: "#A69F92",
-        brass: "#C9A227",
+        brass: "#1a369c",
+        brasslight: "#7586c3",
       },
       fontFamily: {
         display: ["Oswald", "sans-serif"],

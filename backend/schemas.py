@@ -42,6 +42,7 @@ class ExerciseCreate(BaseModel):
     name: str
     day_of_week: int  # 0=Monday ... 6=Sunday
     order_index: int = 0
+    preferred_unit: str = "kg"
 
 
 class ExerciseOut(BaseModel):
@@ -49,6 +50,7 @@ class ExerciseOut(BaseModel):
     name: str
     day_of_week: int
     order_index: int
+    preferred_unit: str
 
     class Config:
         from_attributes = True
@@ -56,6 +58,10 @@ class ExerciseOut(BaseModel):
 
 class ExerciseReorder(BaseModel):
     order_index: int
+
+
+class ExerciseUnitUpdate(BaseModel):
+    preferred_unit: str
 
 
 # ---- Logs ----
@@ -83,6 +89,7 @@ class ExerciseWithStreak(BaseModel):
     name: str
     day_of_week: int
     order_index: int
+    preferred_unit: str = "kg"
     latest_weight: Optional[float] = None
     latest_date: Optional[date] = None
     streak: int = 0  # consecutive sessions at the same weight

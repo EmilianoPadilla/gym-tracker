@@ -40,7 +40,7 @@ export default function Login() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full mb-4 rounded-lg bg-panel border border-hairline px-3 py-2.5 text-chalk focus:outline-none focus:border-brass"
+            className="w-full mb-4 rounded-lg bg-panel border border-hairline px-3 py-2.5 text-chalk focus:outline-none focus:border-brasslight"
           />
 
           <label className="block text-sm text-chalkdim mb-1">{t("password")}</label>
@@ -49,7 +49,7 @@ export default function Login() {
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full mb-2 rounded-lg bg-panel border border-hairline px-3 py-2.5 text-chalk focus:outline-none focus:border-brass"
+            className="w-full mb-2 rounded-lg bg-panel border border-hairline px-3 py-2.5 text-chalk focus:outline-none focus:border-brasslight"
           />
 
           {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
@@ -57,7 +57,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full mt-4 rounded-lg bg-brass text-charcoal font-semibold py-2.5 disabled:opacity-60"
+            className="w-full mt-4 rounded-lg bg-brass text-chalk font-semibold py-2.5 disabled:opacity-60"
           >
             {submitting ? t("loggingIn") : t("logIn")}
           </button>
@@ -72,7 +72,7 @@ export default function Login() {
 
         <p className="text-sm text-chalkdim mt-6 text-center">
           {t("newHere")}{" "}
-          <Link to="/register" className="text-brass underline">
+          <Link to="/register" className="text-brasslight underline">
             {t("createAccount")}
           </Link>
         </p>

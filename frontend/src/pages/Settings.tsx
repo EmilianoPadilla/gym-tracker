@@ -2,12 +2,14 @@ import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
+import { useUnits } from "../units/UnitsContext";
 import { api } from "../api/client";
 import ImageCropperModal from "../components/ImageCropperModal";
 
 export default function Settings() {
   const { user, refreshUser } = useAuth();
   const { language, setLanguage, t } = useLanguage();
+  const { unit, setUnit } = useUnits();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -83,7 +85,7 @@ export default function Settings() {
           <button
             onClick={() => setLanguage("en")}
             className={`px-4 py-2 rounded-lg border text-sm font-medium ${
-              language === "en" ? "bg-brass text-charcoal border-brass" : "border-hairline text-chalkdim"
+              language === "en" ? "bg-brass text-chalk border-brass" : "border-hairline text-chalkdim"
             }`}
           >
             English
@@ -91,12 +93,35 @@ export default function Settings() {
           <button
             onClick={() => setLanguage("es")}
             className={`px-4 py-2 rounded-lg border text-sm font-medium ${
-              language === "es" ? "bg-brass text-charcoal border-brass" : "border-hairline text-chalkdim"
+              language === "es" ? "bg-brass text-chalk border-brass" : "border-hairline text-chalkdim"
             }`}
           >
             Español
           </button>
         </div>
+      </div>
+
+      <div className="mt-8">
+        <p className="text-sm text-chalkdim mb-3">{t("bodyMetricsUnit")}</p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setUnit("kg")}
+            className={`px-4 py-2 rounded-lg border text-sm font-medium ${
+              unit === "kg" ? "bg-brass text-chalk border-brass" : "border-hairline text-chalkdim"
+            }`}
+          >
+            kg
+          </button>
+          <button
+            onClick={() => setUnit("lbs")}
+            className={`px-4 py-2 rounded-lg border text-sm font-medium ${
+              unit === "lbs" ? "bg-brass text-chalk border-brass" : "border-hairline text-chalkdim"
+            }`}
+          >
+            lbs
+          </button>
+        </div>
+        <p className="text-xs text-chalkdim mt-3">{t("perExerciseUnitNote")}</p>
       </div>
 
       {pendingImageSrc && (

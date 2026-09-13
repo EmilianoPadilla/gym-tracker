@@ -104,6 +104,7 @@ def get_today(
                 name=ex.name,
                 day_of_week=ex.day_of_week,
                 order_index=ex.order_index,
+                preferred_unit=ex.preferred_unit,
                 latest_weight=history[0].weight if history else None,
                 latest_date=history[0].date if history else None,
                 streak=streak,

@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
+import { kgToUnit, unitToKg, type Unit } from "../units/UnitsContext";
+import { getExerciseImage } from "../data/exerciseLibrary";
 
 type LogEntry = { id: number; date: string; weight: number; reps: number | null; sets: number | null };
 
 type ExerciseWithStreak = {
   id: number;
   name: string;
+  preferred_unit: Unit;
   latest_weight: number | null;
   latest_date: string | null;
   streak: number;
@@ -15,6 +18,9 @@ type ExerciseWithStreak = {
 
 type ColoredEntry = LogEntry & { color: "green" | "orange" | "red" };
 
+// Streak coloring is computed on the raw (kg) values stored on the backend -
+// unit conversion is purely a display concern and must never affect whether
+// two logged weights count as "the same weight" for progressive overload.
 function colorHistory(history: LogEntry[]): ColoredEntry[] {
   const chronological = [...history].sort((a, b) => a.date.localeCompare(b.date));
   let runWeight: number | null = null;
@@ -50,15 +56,19 @@ export default function ExerciseCard({
   onLogged: () => void;
 }) {
   const { t } = useLanguage();
-  const [weight, setWeight] = useState(exercise.latest_weight?.toString() ?? "");
+  const unit = exercise.preferred_unit;
+  const [weight, setWeight] = useState(
+    exercise.latest_weight != null ? kgToUnit(exercise.latest_weight, unit).toString() : ""
+  );
   const [saving, setSaving] = useState(false);
+  const image = getExerciseImage(exercise.name);
 
   async function handleSave() {
-    const value = parseFloat(weight);
-    if (!value || value <= 0) return;
+    const displayValue = parseFloat(weight);
+    if (!displayValue || displayValue <= 0) return;
     setSaving(true);
     try {
-      await api.addLog(exercise.id, value);
+      await api.addLog(exercise.id, unitToKg(displayValue, unit));
       onLogged();
     } finally {
       setSaving(false);
@@ -70,7 +80,16 @@ export default function ExerciseCard({
 
   return (
     <div className="border-t border-hairline py-4 first:border-t-0">
-      <p className="font-semibold mb-3">{exercise.name}</p>
+      <div className="flex items-center gap-3 mb-3">
+        {image ? (
+          <img src={image} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0 bg-panel" />
+        ) : (
+          <div className="w-12 h-12 rounded-lg bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-sm text-chalkdim">
+            {exercise.name[0]?.toUpperCase()}
+          </div>
+        )}
+        <p className="font-semibold">{exercise.name}</p>
+      </div>
       <div className="flex items-center gap-2.5">
         <div className="relative flex-1">
           <input
@@ -79,14 +98,14 @@ export default function ExerciseCard({
             value={weight}
             onChange={(e) => setWeight(e.target.value)}
             placeholder="0"
-            className="w-full font-display text-2xl font-semibold rounded-lg bg-panel border border-hairline pl-3 pr-11 py-2 focus:outline-none focus:border-brass"
+            className="w-full font-display text-2xl font-semibold rounded-lg bg-panel border border-hairline pl-3 pr-14 py-2 focus:outline-none focus:border-brasslight"
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-chalkdim text-sm">kg</span>
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-chalkdim text-sm">{unit}</span>
         </div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="h-11 px-4 rounded-lg bg-brass text-charcoal font-semibold text-sm flex-shrink-0 disabled:opacity-60"
+          className="h-11 px-4 rounded-lg bg-brass text-chalk font-semibold text-sm flex-shrink-0 disabled:opacity-60"
         >
           {t("save")}
         </button>
@@ -105,7 +124,7 @@ export default function ExerciseCard({
                   className="flex-shrink-0 bg-panel border border-hairline rounded-lg px-2.5 py-1.5 text-center min-w-[54px]"
                 >
                   <span className={`font-display block text-base font-semibold ${colorClasses[h.color]}`}>
-                    {h.weight}
+                    {kgToUnit(h.weight, unit)}
                   </span>
                   <span className="block text-[10px] text-chalkdim mt-0.5">{fmtDate(h.date)}</span>
                 </div>
