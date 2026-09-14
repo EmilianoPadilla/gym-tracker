@@ -90,6 +90,8 @@ export default function Routine() {
   const [activeDay, setActiveDay] = useState(jsDay === 0 ? 6 : jsDay - 1);
   const [exercises, setExercises] = useState<ExerciseItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dayLabel, setDayLabel] = useState("");
+  const [labelSaved, setLabelSaved] = useState(true);
 
   async function load() {
     setLoading(true);
@@ -103,7 +105,17 @@ export default function Routine() {
 
   useEffect(() => {
     load();
+    api.getDayLabels().then((rows: { day_of_week: number; label: string }[]) => {
+      const match = rows.find((r) => r.day_of_week === activeDay);
+      setDayLabel(match?.label ?? "");
+      setLabelSaved(true);
+    });
   }, [activeDay]);
+
+  async function handleSaveLabel() {
+    await api.setDayLabel(activeDay, dayLabel);
+    setLabelSaved(true);
+  }
 
   async function handleAdd(name: string) {
     if (!name) return;
@@ -156,6 +168,19 @@ export default function Routine() {
             {d.slice(0, 3)}
           </button>
         ))}
+      </div>
+
+      <div className="flex gap-2 mb-5">
+        <input
+          value={dayLabel}
+          onChange={(e) => {
+            setDayLabel(e.target.value);
+            setLabelSaved(false);
+          }}
+          onBlur={() => !labelSaved && handleSaveLabel()}
+          placeholder={t("nameThisDay")}
+          className="flex-1 rounded-lg bg-panel border border-hairline px-3 py-2 text-sm text-chalk focus:outline-none focus:border-brasslight"
+        />
       </div>
 
       <ExercisePicker onAdd={handleAdd} />

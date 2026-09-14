@@ -115,3 +115,52 @@ class BodyMetricOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ---- Custom day labels (e.g. "Push day") ----
+class DayLabelUpdate(BaseModel):
+    label: str
+
+
+class DayLabelOut(BaseModel):
+    day_of_week: int
+    label: str
+
+    class Config:
+        from_attributes = True
+
+
+# ---- Editing a specific log entry (calendar / history view) ----
+class LogUpdate(BaseModel):
+    weight: Optional[float] = None
+    log_date: Optional[date] = None
+    reps: Optional[int] = None
+    sets: Optional[int] = None
+
+
+class LogWithExercise(BaseModel):
+    id: int
+    exercise_id: int
+    exercise_name: str
+    date: date
+    weight: float
+    reps: Optional[int]
+    sets: Optional[int]
+
+
+# ---- Progress charts: all exercises assigned to one weekday, over time ----
+class ProgressPoint(BaseModel):
+    date: date
+    weight: float
+
+
+class ProgressExercise(BaseModel):
+    id: int
+    name: str
+    history: List[ProgressPoint]
+
+
+class ProgressResponse(BaseModel):
+    day_of_week: int
+    label: str
+    exercises: List[ProgressExercise]

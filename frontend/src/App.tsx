@@ -9,6 +9,8 @@ import Today from "./pages/Today";
 import Routine from "./pages/Routine";
 import Settings from "./pages/Settings";
 import BodyMetrics from "./pages/BodyMetrics";
+import History from "./pages/History";
+import Progress from "./pages/Progress";
 
 export default function App() {
   return (
@@ -48,6 +50,22 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <BodyMetrics />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute>
+                  <History />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/progress"
+              element={
+                <ProtectedRoute>
+                  <Progress />
                 </ProtectedRoute>
               }
             />

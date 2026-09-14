@@ -13,6 +13,7 @@ export default function Today() {
   const { language, t } = useLanguage();
   const [exercises, setExercises] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dayLabel, setDayLabel] = useState("");
 
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
   const jsDay = new Date().getDay(); // 0=Sunday
@@ -34,6 +35,10 @@ export default function Today() {
 
   useEffect(() => {
     load();
+    api.getDayLabels().then((rows: { day_of_week: number; label: string }[]) => {
+      const match = rows.find((r) => r.day_of_week === dayIndex);
+      setDayLabel(match?.label ?? "");
+    });
   }, []);
 
   return (
@@ -55,6 +60,12 @@ export default function Today() {
             <h1 className="font-display text-4xl font-semibold">{DAYS[dayIndex]}</h1>
             <p className="text-chalkdim text-sm mt-1">
               {dateStr} &middot; {user?.name}
+              {dayLabel && (
+                <>
+                  {" "}
+                  &middot; <span className="text-brasslight">{dayLabel}</span>
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -67,6 +78,12 @@ export default function Today() {
           </Link>
           <Link to="/body-metrics" className="text-sm text-chalkdim underline">
             {t("bodyMetrics")}
+          </Link>
+          <Link to="/history" className="text-sm text-chalkdim underline">
+            {t("history")}
+          </Link>
+          <Link to="/progress" className="text-sm text-chalkdim underline">
+            {t("progress")}
           </Link>
           <button onClick={logout} className="text-sm text-chalkdim underline">
             {t("logOut")}

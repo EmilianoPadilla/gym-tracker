@@ -86,14 +86,14 @@ export const api = {
       body: JSON.stringify({ order_index: orderIndex }),
     }),
 
-  addLog: (exerciseId: number, weight: number, reps?: number, sets?: number) =>
+  addLog: (exerciseId: number, weight: number, reps?: number, sets?: number, dateStr?: string) =>
     request(`/exercises/${exerciseId}/logs`, {
       method: "POST",
       body: JSON.stringify({
         weight,
         reps,
         sets,
-        log_date: new Date().toLocaleDateString("en-CA"), // YYYY-MM-DD in the browser's local timezone
+        log_date: dateStr || new Date().toLocaleDateString("en-CA"), // YYYY-MM-DD in the browser's local timezone
       }),
     }),
 
@@ -115,4 +115,18 @@ export const api = {
   }) => request("/body-metrics", { method: "POST", body: JSON.stringify(fields) }),
 
   getBodyMetrics: (daysBack: number) => request(`/body-metrics?days_back=${daysBack}`),
+
+  getDayLabels: () => request("/day-labels"),
+  setDayLabel: (dayOfWeek: number, label: string) =>
+    request(`/day-labels/${dayOfWeek}`, { method: "PUT", body: JSON.stringify({ label }) }),
+
+  getLogsByDate: (dateStr: string) => request(`/logs/by-date?log_date=${dateStr}`),
+  updateLog: (logId: number, fields: { weight?: number; log_date?: string }) =>
+    request(`/logs/${logId}`, { method: "PATCH", body: JSON.stringify(fields) }),
+  deleteLog: (logId: number) => request(`/logs/${logId}`, { method: "DELETE" }),
+  getCalendarSummary: (year: number, month: number) =>
+    request(`/calendar-summary?year=${year}&month=${month}`),
+
+  getProgress: (dayOfWeek: number, daysBack: number) =>
+    request(`/progress?day_of_week=${dayOfWeek}&days_back=${daysBack}`),
 };

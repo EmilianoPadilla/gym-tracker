@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -14,6 +14,7 @@ export default function GoogleSignInButton() {
   const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const buttonRef = useRef<HTMLDivElement>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return; // not configured yet - button just won't render
@@ -23,11 +24,12 @@ export default function GoogleSignInButton() {
       window.google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: async (response: { credential: string }) => {
+          setStatus("loading");
           try {
             await loginWithGoogle(response.credential);
             navigate("/");
           } catch {
-            // Silently ignored - the person can just try again or use email/password
+            setStatus("error");
           }
         },
       });
@@ -54,5 +56,19 @@ export default function GoogleSignInButton() {
 
   if (!GOOGLE_CLIENT_ID) return null;
 
-  return <div ref={buttonRef} className="flex justify-center" />;
+  return (
+    <div>
+      <div ref={buttonRef} className="flex justify-center" style={{ opacity: status === "loading" ? 0.4 : 1 }} />
+      {status === "loading" && (
+        <p className="text-center text-sm text-chalkdim mt-3">
+          Signing in - this can take up to a minute if the server was asleep...
+        </p>
+      )}
+      {status === "error" && (
+        <p className="text-center text-sm text-red-400 mt-3">
+          Something went wrong. Please try again.
+        </p>
+      )}
+    </div>
+  );
 }

@@ -48,6 +48,12 @@ export const translations = {
     last6Months: "6M",
     lastYear: "1Y",
     noDataYet: "No data yet — log a reading to see your progress here",
+    history: "History",
+    noLogsThisDay: "Nothing logged this day.",
+    moveToDifferentDay: "Move to a different day",
+    addAnExercise: "Add an exercise...",
+    progress: "Progress",
+    nameThisDay: "Name this day (e.g. Push day)",
   },
   es: {
     createAccount: "Crea tu cuenta",
@@ -98,6 +104,12 @@ export const translations = {
     last6Months: "6M",
     lastYear: "1A",
     noDataYet: "Aún no hay datos — registra una lectura para ver tu progreso aquí",
+    history: "Historial",
+    noLogsThisDay: "No hay nada registrado este día.",
+    moveToDifferentDay: "Mover a otro día",
+    addAnExercise: "Agregar un ejercicio...",
+    progress: "Progreso",
+    nameThisDay: "Nombra este día (ej. Día de empuje)",
   },
 };
 

@@ -3,6 +3,18 @@ from sqlalchemy.orm import relationship
 from database import Base
 
 
+class DayLabel(Base):
+    """A custom name a user gives one of their weekdays, e.g. 'Push day'."""
+    __tablename__ = "day_labels"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    day_of_week = Column(Integer, nullable=False)  # 0=Monday ... 6=Sunday
+    label = Column(String, nullable=False)
+
+    owner = relationship("User", back_populates="day_labels")
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -17,6 +29,7 @@ class User(Base):
 
     exercises = relationship("Exercise", back_populates="owner", cascade="all, delete-orphan")
     body_metrics = relationship("BodyMetric", back_populates="owner", cascade="all, delete-orphan")
+    day_labels = relationship("DayLabel", back_populates="owner", cascade="all, delete-orphan")
 
 
 class Exercise(Base):
