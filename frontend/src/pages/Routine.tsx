@@ -335,7 +335,7 @@ export default function Routine() {
           )}
 
           <p className="text-xs text-chalkdim text-center mt-8">
-            Exercise data by{" "}
+            Pictures by{" "}
             <a href="https://repdb.co" target="_blank" rel="noreferrer" className="underline">
               RepDB
             </a>
