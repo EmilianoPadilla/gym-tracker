@@ -139,13 +139,16 @@ export default function BodyMetrics() {
         <p className="text-sm font-semibold mb-3">{t("logTodaysReading")}</p>
         <div className="mb-3">
           <label className="block text-xs text-chalkdim mb-1">{t("date")}</label>
-          <input
-            type="date"
-            value={entryDate}
-            max={new Date().toISOString().slice(0, 10)}
-            onChange={(e) => setEntryDate(e.target.value)}
-            className="w-full rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk focus:outline-none focus:border-brasslight"
-          />
+          <div className="overflow-hidden rounded-lg">
+            <input
+              type="date"
+              value={entryDate}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setEntryDate(e.target.value)}
+              className="block w-full max-w-full box-border rounded-lg bg-panelraised border border-hairline px-3 py-2 text-chalk text-sm focus:outline-none focus:border-brasslight"
+              style={{ minWidth: 0 }}
+            />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div>

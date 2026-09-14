@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
 import { kgToUnit, unitToKg, type Unit } from "../units/UnitsContext";
 import { getExerciseImage } from "../data/exerciseLibrary";
+import MarqueeText from "./MarqueeText";
 
 type LogEntry = { id: number; date: string; weight: number; reps: number | null; sets: number | null };
 
@@ -10,6 +11,7 @@ type ExerciseWithStreak = {
   id: number;
   name: string;
   preferred_unit: Unit;
+  custom_image: string | null;
   latest_weight: number | null;
   latest_date: string | null;
   streak: number;
@@ -61,7 +63,7 @@ export default function ExerciseCard({
     exercise.latest_weight != null ? kgToUnit(exercise.latest_weight, unit).toString() : ""
   );
   const [saving, setSaving] = useState(false);
-  const image = getExerciseImage(exercise.name);
+  const image = exercise.custom_image || getExerciseImage(exercise.name);
 
   async function handleSave() {
     const displayValue = parseFloat(weight);
@@ -88,7 +90,7 @@ export default function ExerciseCard({
             {exercise.name[0]?.toUpperCase()}
           </div>
         )}
-        <p className="font-semibold">{exercise.name}</p>
+        <MarqueeText text={exercise.name} className="font-semibold flex-1 min-w-0" />
       </div>
       <div className="flex items-center gap-2.5">
         <div className="relative flex-1">

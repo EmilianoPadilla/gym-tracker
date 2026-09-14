@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import ExerciseCard from "../components/ExerciseCard";
 import HamburgerMenu from "../components/HamburgerMenu";
+import MarqueeText from "../components/MarqueeText";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -47,11 +48,11 @@ export default function Today() {
   }, []);
 
   const menuItems = [
-    { to: "/settings", label: t("settings") },
-    { to: "/routine", label: t("addModifyRoutine") },
-    { to: "/body-metrics", label: t("bodyMetrics") },
     { to: "/history", label: t("history") },
+    { to: "/routine", label: t("addModifyRoutine") },
     { to: "/progress", label: t("progress") },
+    { to: "/body-metrics", label: t("bodyMetrics") },
+    { to: "/settings", label: t("settings") },
     { label: t("logOut"), onClick: logout },
   ];
 
@@ -70,16 +71,13 @@ export default function Today() {
               )}
             </div>
           </Link>
-          <div className="min-w-0">
-            <h1 className="font-display text-4xl font-semibold">{DAYS[dayIndex]}</h1>
+          <div className="min-w-0 flex-1">
+            <MarqueeText
+              text={dayLabel ? `${DAYS[dayIndex]} (${dayLabel})` : DAYS[dayIndex]}
+              className="font-display text-4xl font-semibold"
+            />
             <p className="text-chalkdim text-sm mt-1 truncate">
               {dateStr} &middot; {user?.name}
-              {dayLabel && (
-                <>
-                  {" "}
-                  &middot; <span className="text-brasslight">{dayLabel}</span>
-                </>
-              )}
             </p>
           </div>
         </div>

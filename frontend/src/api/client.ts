@@ -78,6 +78,12 @@ export const api = {
       body: JSON.stringify({ preferred_unit: unit }),
     }),
 
+  updateExerciseImage: (id: number, dataUrl: string | null) =>
+    request(`/exercises/${id}/image`, {
+      method: "PATCH",
+      body: JSON.stringify({ custom_image: dataUrl }),
+    }),
+
   deleteExercise: (id: number) => request(`/exercises/${id}`, { method: "DELETE" }),
 
   updateExerciseOrder: (id: number, orderIndex: number) =>

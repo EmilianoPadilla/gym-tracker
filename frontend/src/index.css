@@ -26,3 +26,22 @@ body {
     font-size: 20px;
   }
 }
+
+/* Slowly scrolls overflowing text to reveal the hidden end, pauses, then
+   scrolls back to the start and pauses again, looping. Only applied when
+   text actually overflows its container (see MarqueeText.tsx). */
+@keyframes marquee-scroll {
+  0%, 15% {
+    transform: translateX(0);
+  }
+  45%, 60% {
+    transform: translateX(var(--marquee-distance));
+  }
+  90%, 100% {
+    transform: translateX(0);
+  }
+}
+
+.marquee-scroll {
+  animation: marquee-scroll 7s ease-in-out infinite;
+}

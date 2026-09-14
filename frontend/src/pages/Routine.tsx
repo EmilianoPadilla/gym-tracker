@@ -5,12 +5,21 @@ import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
 import { useUnits } from "../units/UnitsContext";
 import ExercisePicker from "../components/ExercisePicker";
+import MarqueeText from "../components/MarqueeText";
 import { getExerciseImage } from "../data/exerciseLibrary";
+import { resizeImageToDataUrl } from "../lib/resizeImage";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
-type ExerciseItem = { id: number; name: string; day_of_week: number; order_index: number; preferred_unit: "kg" | "lbs" };
+type ExerciseItem = {
+  id: number;
+  name: string;
+  day_of_week: number;
+  order_index: number;
+  preferred_unit: "kg" | "lbs";
+  custom_image: string | null;
+};
 
 function DragHandleIcon() {
   return (
@@ -25,17 +34,36 @@ function DragHandleIcon() {
   );
 }
 
+function CameraIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  );
+}
+
 function ExerciseRow({
   ex,
   onRemove,
   onToggleUnit,
+  onImageChange,
 }: {
   ex: ExerciseItem;
   onRemove: (id: number) => void;
   onToggleUnit: (id: number, unit: "kg" | "lbs") => void;
+  onImageChange: (id: number, dataUrl: string) => void;
 }) {
   const controls = useDragControls();
-  const image = getExerciseImage(ex.name);
+  const image = ex.custom_image || getExerciseImage(ex.name);
+
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const dataUrl = await resizeImageToDataUrl(file, 200);
+    onImageChange(ex.id, dataUrl);
+    e.target.value = "";
+  }
 
   return (
     <Reorder.Item
@@ -44,28 +72,33 @@ function ExerciseRow({
       dragControls={controls}
       className="flex items-center justify-between py-3 border-t border-hairline first:border-t-0 bg-charcoal select-none"
     >
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div
-          onPointerDown={(e) => {
-            e.preventDefault();
-            controls.start(e);
-          }}
-          className="text-chalkdim cursor-grab active:cursor-grabbing touch-none flex-shrink-0 p-1"
-        >
+      {/* Drag starts anywhere in this area (icon, image, name) - only the unit
+          toggle and remove button, outside this container, are excluded. */}
+      <div
+        onPointerDown={(e) => {
+          e.preventDefault();
+          controls.start(e);
+        }}
+        className="flex items-center gap-3 flex-1 min-w-0 cursor-grab active:cursor-grabbing touch-none"
+      >
+        <div className="text-chalkdim flex-shrink-0 p-1">
           <DragHandleIcon />
         </div>
-        {image ? (
-          <img
-            src={image}
-            alt=""
-            className="w-8 h-8 rounded-md object-cover flex-shrink-0 bg-panel"
-          />
-        ) : (
-          <div className="w-8 h-8 rounded-md bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim">
-            {ex.name[0]?.toUpperCase()}
-          </div>
-        )}
-        <span className="flex-1 min-w-0 truncate">{ex.name}</span>
+        <label
+          className="relative w-8 h-8 rounded-md bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim overflow-hidden cursor-pointer"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {image ? (
+            <img src={image} alt="" className="w-full h-full object-cover" />
+          ) : (
+            ex.name[0]?.toUpperCase()
+          )}
+          <span className="absolute bottom-0 right-0 bg-charcoal/80 rounded-tl-md p-0.5 text-chalkdim">
+            <CameraIcon />
+          </span>
+          <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+        </label>
+        <MarqueeText text={ex.name} className="flex-1 min-w-0" />
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <button
@@ -136,20 +169,20 @@ export default function Routine() {
     await api.updateExerciseUnit(id, unit);
   }
 
+  async function handleImageChange(id: number, dataUrl: string) {
+    setExercises((prev) => prev.map((ex) => (ex.id === id ? { ...ex, custom_image: dataUrl } : ex)));
+    await api.updateExerciseImage(id, dataUrl);
+  }
+
   async function handleRemove(id: number) {
     await api.deleteExercise(id);
     load();
   }
 
-  // Called by Reorder.Group whenever a drag finishes with a new order.
-  // We persist every item's new order_index in the background - cheap since
-  // routines are short lists, and it keeps the UI feeling instant.
   async function handleReorder(newOrder: ExerciseItem[]) {
     setExercises(newOrder);
     await Promise.all(
-      newOrder.map((ex, i) =>
-        ex.order_index === i ? null : api.updateExerciseOrder(ex.id, i)
-      )
+      newOrder.map((ex, i) => (ex.order_index === i ? null : api.updateExerciseOrder(ex.id, i)))
     );
   }
 
@@ -201,31 +234,43 @@ export default function Routine() {
         {t("restDay")}
       </label>
 
-      <ExercisePicker onAdd={handleAdd} />
-
-      {loading ? (
-        <p className="text-chalkdim text-sm">Loading...</p>
-      ) : exercises.length === 0 ? (
-        <p className="text-chalkdim text-sm text-center py-6">
-          {t("noExercisesFor")} {DAYS[activeDay]}.
-        </p>
+      {isRestDay ? (
+        <p className="text-chalkdim text-sm text-center py-8">{t("restDayNoExercisesNeeded")}</p>
       ) : (
         <>
-          <p className="text-xs text-chalkdim mt-2 mb-1">{t("dragToReorder")}</p>
-          <Reorder.Group axis="y" values={exercises} onReorder={handleReorder}>
-            {exercises.map((ex) => (
-              <ExerciseRow key={ex.id} ex={ex} onRemove={handleRemove} onToggleUnit={handleToggleUnit} />
-            ))}
-          </Reorder.Group>
+          <ExercisePicker onAdd={handleAdd} />
+
+          {loading ? (
+            <p className="text-chalkdim text-sm">Loading...</p>
+          ) : exercises.length === 0 ? (
+            <p className="text-chalkdim text-sm text-center py-6">
+              {t("noExercisesFor")} {DAYS[activeDay]}.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-chalkdim mt-2 mb-1">{t("dragToReorder")}</p>
+              <Reorder.Group axis="y" values={exercises} onReorder={handleReorder}>
+                {exercises.map((ex) => (
+                  <ExerciseRow
+                    key={ex.id}
+                    ex={ex}
+                    onRemove={handleRemove}
+                    onToggleUnit={handleToggleUnit}
+                    onImageChange={handleImageChange}
+                  />
+                ))}
+              </Reorder.Group>
+            </>
+          )}
+
+          <p className="text-xs text-chalkdim text-center mt-8">
+            Exercise data by{" "}
+            <a href="https://repdb.co" target="_blank" rel="noreferrer" className="underline">
+              RepDB
+            </a>
+          </p>
         </>
       )}
-
-      <p className="text-xs text-chalkdim text-center mt-8">
-        Exercise data by{" "}
-        <a href="https://repdb.co" target="_blank" rel="noreferrer" className="underline">
-          RepDB
-        </a>
-      </p>
     </div>
   );
 }

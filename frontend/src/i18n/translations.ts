@@ -57,6 +57,7 @@ export const translations = {
     restDay: "Rest day",
     restDayTitle: "Rest day 🎉",
     restDayMessage: "This is your day off. Enjoy it!",
+    restDayNoExercisesNeeded: "It's a rest day - no exercises needed.",
   },
   es: {
     createAccount: "Crea tu cuenta",
@@ -116,6 +117,7 @@ export const translations = {
     restDay: "Día de descanso",
     restDayTitle: "Día de descanso 🎉",
     restDayMessage: "Es tu día de relajación, ¡disfrútalo!",
+    restDayNoExercisesNeeded: "Es un día de descanso - no necesitas ejercicios.",
   },
 };
 
