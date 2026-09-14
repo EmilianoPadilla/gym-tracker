@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime, Text, func
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey, DateTime, Text, Boolean, func
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -11,6 +11,7 @@ class DayLabel(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     day_of_week = Column(Integer, nullable=False)  # 0=Monday ... 6=Sunday
     label = Column(String, nullable=False)
+    is_rest_day = Column(Boolean, default=False, nullable=False)
 
     owner = relationship("User", back_populates="day_labels")
 

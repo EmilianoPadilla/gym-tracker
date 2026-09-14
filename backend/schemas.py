@@ -120,11 +120,13 @@ class BodyMetricOut(BaseModel):
 # ---- Custom day labels (e.g. "Push day") ----
 class DayLabelUpdate(BaseModel):
     label: str
+    is_rest_day: bool = False
 
 
 class DayLabelOut(BaseModel):
     day_of_week: int
     label: str
+    is_rest_day: bool
 
     class Config:
         from_attributes = True

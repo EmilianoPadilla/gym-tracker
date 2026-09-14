@@ -54,6 +54,9 @@ export const translations = {
     addAnExercise: "Add an exercise...",
     progress: "Progress",
     nameThisDay: "Name this day (e.g. Push day)",
+    restDay: "Rest day",
+    restDayTitle: "Rest day 🎉",
+    restDayMessage: "This is your day off. Enjoy it!",
   },
   es: {
     createAccount: "Crea tu cuenta",
@@ -110,6 +113,9 @@ export const translations = {
     addAnExercise: "Agregar un ejercicio...",
     progress: "Progreso",
     nameThisDay: "Nombra este día (ej. Día de empuje)",
+    restDay: "Día de descanso",
+    restDayTitle: "Día de descanso 🎉",
+    restDayMessage: "Es tu día de relajación, ¡disfrútalo!",
   },
 };
 

@@ -36,11 +36,17 @@ def set_day_label(
     )
     if existing:
         existing.label = payload.label
+        existing.is_rest_day = payload.is_rest_day
         db.commit()
         db.refresh(existing)
         return existing
 
-    new_label = models.DayLabel(user_id=current_user.id, day_of_week=day_of_week, label=payload.label)
+    new_label = models.DayLabel(
+        user_id=current_user.id,
+        day_of_week=day_of_week,
+        label=payload.label,
+        is_rest_day=payload.is_rest_day,
+    )
     db.add(new_label)
     db.commit()
     db.refresh(new_label)

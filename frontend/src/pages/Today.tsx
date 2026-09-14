@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import ExerciseCard from "../components/ExerciseCard";
+import HamburgerMenu from "../components/HamburgerMenu";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -14,6 +15,8 @@ export default function Today() {
   const [exercises, setExercises] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [dayLabel, setDayLabel] = useState("");
+  const [isRestDay, setIsRestDay] = useState(false);
+  const [labelsLoaded, setLabelsLoaded] = useState(false);
 
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
   const jsDay = new Date().getDay(); // 0=Sunday
@@ -35,16 +38,27 @@ export default function Today() {
 
   useEffect(() => {
     load();
-    api.getDayLabels().then((rows: { day_of_week: number; label: string }[]) => {
+    api.getDayLabels().then((rows: { day_of_week: number; label: string; is_rest_day: boolean }[]) => {
       const match = rows.find((r) => r.day_of_week === dayIndex);
       setDayLabel(match?.label ?? "");
+      setIsRestDay(match?.is_rest_day ?? false);
+      setLabelsLoaded(true);
     });
   }, []);
+
+  const menuItems = [
+    { to: "/settings", label: t("settings") },
+    { to: "/routine", label: t("addModifyRoutine") },
+    { to: "/body-metrics", label: t("bodyMetrics") },
+    { to: "/history", label: t("history") },
+    { to: "/progress", label: t("progress") },
+    { label: t("logOut"), onClick: logout },
+  ];
 
   return (
     <div className="min-h-screen max-w-lg mx-auto px-5 py-6">
       <div className="flex justify-between items-start mb-1">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <Link to="/settings" className="flex-shrink-0">
             <div className="w-11 h-11 rounded-full bg-panel border border-hairline overflow-hidden flex items-center justify-center">
               {user?.profile_picture ? (
@@ -56,9 +70,9 @@ export default function Today() {
               )}
             </div>
           </Link>
-          <div>
+          <div className="min-w-0">
             <h1 className="font-display text-4xl font-semibold">{DAYS[dayIndex]}</h1>
-            <p className="text-chalkdim text-sm mt-1">
+            <p className="text-chalkdim text-sm mt-1 truncate">
               {dateStr} &middot; {user?.name}
               {dayLabel && (
                 <>
@@ -69,30 +83,16 @@ export default function Today() {
             </p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <Link to="/settings" className="text-sm text-chalkdim underline">
-            {t("settings")}
-          </Link>
-          <Link to="/routine" className="text-sm text-chalkdim underline">
-            {t("addModifyRoutine")}
-          </Link>
-          <Link to="/body-metrics" className="text-sm text-chalkdim underline">
-            {t("bodyMetrics")}
-          </Link>
-          <Link to="/history" className="text-sm text-chalkdim underline">
-            {t("history")}
-          </Link>
-          <Link to="/progress" className="text-sm text-chalkdim underline">
-            {t("progress")}
-          </Link>
-          <button onClick={logout} className="text-sm text-chalkdim underline">
-            {t("logOut")}
-          </button>
-        </div>
+        <HamburgerMenu items={menuItems} />
       </div>
 
       <div className="mt-6">
-        {loading ? (
+        {!labelsLoaded ? null : isRestDay ? (
+          <div className="text-center py-16">
+            <p className="font-display text-3xl mb-2">{t("restDayTitle")}</p>
+            <p className="text-chalkdim">{t("restDayMessage")}</p>
+          </div>
+        ) : loading ? (
           <p className="text-chalkdim text-sm">Loading...</p>
         ) : !exercises || exercises.length === 0 ? (
           <div className="text-center py-10 text-chalkdim">

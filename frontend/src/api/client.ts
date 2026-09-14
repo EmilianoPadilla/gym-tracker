@@ -117,8 +117,11 @@ export const api = {
   getBodyMetrics: (daysBack: number) => request(`/body-metrics?days_back=${daysBack}`),
 
   getDayLabels: () => request("/day-labels"),
-  setDayLabel: (dayOfWeek: number, label: string) =>
-    request(`/day-labels/${dayOfWeek}`, { method: "PUT", body: JSON.stringify({ label }) }),
+  setDayLabel: (dayOfWeek: number, label: string, isRestDay: boolean = false) =>
+    request(`/day-labels/${dayOfWeek}`, {
+      method: "PUT",
+      body: JSON.stringify({ label, is_rest_day: isRestDay }),
+    }),
 
   getLogsByDate: (dateStr: string) => request(`/logs/by-date?log_date=${dateStr}`),
   updateLog: (logId: number, fields: { weight?: number; log_date?: string }) =>

@@ -28,14 +28,26 @@ export default function Progress() {
   const [selectedDay, setSelectedDay] = useState(jsDay === 0 ? 6 : jsDay - 1);
   const [range, setRange] = useState<Range>(90);
   const [labels, setLabels] = useState<Record<number, string>>({});
+  const [restDays, setRestDays] = useState<Set<number>>(new Set());
   const [data, setData] = useState<ProgressResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getDayLabels().then((rows: { day_of_week: number; label: string }[]) => {
+    api.getDayLabels().then((rows: { day_of_week: number; label: string; is_rest_day: boolean }[]) => {
       const map: Record<number, string> = {};
-      rows.forEach((r) => (map[r.day_of_week] = r.label));
+      const rest = new Set<number>();
+      rows.forEach((r) => {
+        map[r.day_of_week] = r.label;
+        if (r.is_rest_day) rest.add(r.day_of_week);
+      });
       setLabels(map);
+      setRestDays(rest);
+      // If today happens to be a rest day, default the view to the first
+      // non-rest day instead, since there's nothing to show for rest days.
+      if (rest.has(selectedDay)) {
+        const firstAvailable = [0, 1, 2, 3, 4, 5, 6].find((d) => !rest.has(d));
+        if (firstAvailable !== undefined) setSelectedDay(firstAvailable);
+      }
     });
   }, []);
 
@@ -78,19 +90,21 @@ export default function Progress() {
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto mb-4 pb-1">
-        {DAYS.map((d, i) => (
-          <button
-            key={d}
-            onClick={() => setSelectedDay(i)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm border ${
-              i === selectedDay
-                ? "bg-brass text-chalk border-brass font-semibold"
-                : "border-hairline text-chalkdim"
-            }`}
-          >
-            {labels[i] || d}
-          </button>
-        ))}
+        {DAYS.map((d, i) =>
+          restDays.has(i) ? null : (
+            <button
+              key={d}
+              onClick={() => setSelectedDay(i)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm border ${
+                i === selectedDay
+                  ? "bg-brass text-chalk border-brass font-semibold"
+                  : "border-hairline text-chalkdim"
+              }`}
+            >
+              {labels[i] || d}
+            </button>
+          )
+        )}
       </div>
 
       <div className="flex gap-2 mb-6">

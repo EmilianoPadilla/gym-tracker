@@ -47,6 +47,13 @@ export default function History() {
   const [routine, setRoutine] = useState<{ id: number; name: string }[]>([]);
   const [addExerciseId, setAddExerciseId] = useState<string>("");
   const [addWeight, setAddWeight] = useState("");
+  const [restDays, setRestDays] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    api.getDayLabels().then((rows: { day_of_week: number; is_rest_day: boolean }[]) => {
+      setRestDays(new Set(rows.filter((r) => r.is_rest_day).map((r) => r.day_of_week)));
+    });
+  }, []);
 
   // Limit range to the last 3 months, matching what was asked for.
   const earliestAllowed = new Date(today.getFullYear(), today.getMonth() - 2, 1);
@@ -176,19 +183,30 @@ export default function History() {
           const hasLogs = datesWithLogs.has(iso);
           const isToday = iso === todayISO;
           const isFuture = d > today;
+          const jsWeekday = d.getDay(); // 0=Sunday
+          const dayOfWeek = jsWeekday === 0 ? 6 : jsWeekday - 1; // 0=Monday, matches backend
+          const isRest = restDays.has(dayOfWeek);
+          const isMissed = !isFuture && !isRest && !hasLogs;
+
           return (
             <button
               key={i}
               onClick={() => !isFuture && openDay(d)}
               disabled={isFuture}
-              className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm relative
+              className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm relative overflow-hidden
                 ${isFuture ? "text-hairline" : "text-chalk"}
                 ${isToday ? "border border-brasslight" : "border border-transparent"}
                 ${selectedDate === iso ? "bg-panelraised" : ""}
+                ${isMissed ? "bg-red-900/20" : ""}
               `}
             >
-              {d.getDate()}
-              {hasLogs && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-brass" />}
+              {isRest && !isFuture ? (
+                <span className="font-display font-bold text-2xl text-chalkdim/50 absolute inset-0 flex items-center justify-center">
+                  R
+                </span>
+              ) : null}
+              <span className={isRest && !isFuture ? "relative z-10 text-xs" : ""}>{d.getDate()}</span>
+              {hasLogs && <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-brass z-10" />}
             </button>
           );
         })}

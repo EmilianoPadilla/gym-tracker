@@ -91,6 +91,7 @@ export default function Routine() {
   const [exercises, setExercises] = useState<ExerciseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dayLabel, setDayLabel] = useState("");
+  const [isRestDay, setIsRestDay] = useState(false);
   const [labelSaved, setLabelSaved] = useState(true);
 
   async function load() {
@@ -105,16 +106,23 @@ export default function Routine() {
 
   useEffect(() => {
     load();
-    api.getDayLabels().then((rows: { day_of_week: number; label: string }[]) => {
+    api.getDayLabels().then((rows: { day_of_week: number; label: string; is_rest_day: boolean }[]) => {
       const match = rows.find((r) => r.day_of_week === activeDay);
       setDayLabel(match?.label ?? "");
+      setIsRestDay(match?.is_rest_day ?? false);
       setLabelSaved(true);
     });
   }, [activeDay]);
 
-  async function handleSaveLabel() {
-    await api.setDayLabel(activeDay, dayLabel);
+  async function handleSaveLabel(overrideRestDay?: boolean) {
+    await api.setDayLabel(activeDay, dayLabel, overrideRestDay ?? isRestDay);
     setLabelSaved(true);
+  }
+
+  async function handleToggleRestDay() {
+    const newValue = !isRestDay;
+    setIsRestDay(newValue);
+    await api.setDayLabel(activeDay, dayLabel, newValue);
   }
 
   async function handleAdd(name: string) {
@@ -170,7 +178,7 @@ export default function Routine() {
         ))}
       </div>
 
-      <div className="flex gap-2 mb-5">
+      <div className="flex gap-2 mb-3">
         <input
           value={dayLabel}
           onChange={(e) => {
@@ -182,6 +190,16 @@ export default function Routine() {
           className="flex-1 rounded-lg bg-panel border border-hairline px-3 py-2 text-sm text-chalk focus:outline-none focus:border-brasslight"
         />
       </div>
+
+      <label className="flex items-center gap-2 mb-5 text-sm text-chalkdim cursor-pointer">
+        <input
+          type="checkbox"
+          checked={isRestDay}
+          onChange={handleToggleRestDay}
+          className="w-4 h-4 accent-brasslight"
+        />
+        {t("restDay")}
+      </label>
 
       <ExercisePicker onAdd={handleAdd} />
 
