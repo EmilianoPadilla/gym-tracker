@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import BackToStartLink from "../components/BackToStartLink";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import { useUnits } from "../units/UnitsContext";
@@ -42,9 +42,7 @@ export default function Settings() {
     <div className="min-h-screen max-w-lg mx-auto px-5 py-6">
       <div className="flex justify-between items-start mb-8">
         <h1 className="font-display text-3xl font-semibold">{t("settings")}</h1>
-        <Link to="/" className="text-sm text-chalkdim underline">
-          {t("backToToday")}
-        </Link>
+        <BackToStartLink />
       </div>
 
       <div className="mb-8">

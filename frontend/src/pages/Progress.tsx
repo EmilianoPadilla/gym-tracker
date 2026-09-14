@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import BackToStartLink from "../components/BackToStartLink";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -84,9 +84,7 @@ export default function Progress() {
     <div className="min-h-screen max-w-lg mx-auto px-5 py-6">
       <div className="flex justify-between items-start mb-6">
         <h1 className="font-display text-3xl font-semibold">{t("progress")}</h1>
-        <Link to="/" className="text-sm text-chalkdim underline">
-          {t("backToToday")}
-        </Link>
+        <BackToStartLink />
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto mb-4 pb-1">

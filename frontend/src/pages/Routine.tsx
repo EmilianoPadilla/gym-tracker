@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import BackToStartLink from "../components/BackToStartLink";
 import { Reorder, useDragControls } from "framer-motion";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -34,6 +34,9 @@ function DragHandleIcon() {
   );
 }
 
+const LONG_PRESS_MS = 400;
+const MOVE_CANCEL_THRESHOLD = 10; // px of movement before the hold is treated as a scroll, not a drag
+
 function ExerciseRow({
   ex,
   onRemove,
@@ -47,6 +50,7 @@ function ExerciseRow({
 }) {
   const controls = useDragControls();
   const image = ex.custom_image || getExerciseImage(ex.name);
+  const [pressing, setPressing] = useState(false);
 
   async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -56,21 +60,61 @@ function ExerciseRow({
     e.target.value = "";
   }
 
+  // Holding still for LONG_PRESS_MS starts the drag. Scrolling past the app
+  // normally cancels it immediately (real finger movement), so a quick swipe
+  // through the list to scroll no longer gets mistaken for a reorder.
+  function handlePointerDown(e: React.PointerEvent) {
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const nativeEvent = e.nativeEvent;
+    let cancelled = false;
+
+    function cleanup() {
+      cancelled = true;
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("pointercancel", handleUp);
+      setPressing(false);
+    }
+
+    function handleMove(ev: PointerEvent) {
+      if (Math.abs(ev.clientX - startX) > MOVE_CANCEL_THRESHOLD || Math.abs(ev.clientY - startY) > MOVE_CANCEL_THRESHOLD) {
+        cleanup();
+      }
+    }
+
+    function handleUp() {
+      cleanup();
+    }
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    window.addEventListener("pointercancel", handleUp);
+    setPressing(true);
+
+    setTimeout(() => {
+      if (cancelled) return;
+      cleanup();
+      controls.start(nativeEvent);
+    }, LONG_PRESS_MS);
+  }
+
   return (
     <Reorder.Item
       value={ex}
       dragListener={false}
       dragControls={controls}
-      className="flex items-center justify-between py-3 border-t border-hairline first:border-t-0 bg-charcoal select-none"
+      className={`flex items-center justify-between py-3 border-t border-hairline first:border-t-0 bg-charcoal select-none transition-colors ${
+        pressing ? "bg-panelraised" : ""
+      }`}
     >
-      {/* Drag starts anywhere in this area (icon, image, name) - only the unit
-          toggle and remove button, outside this container, are excluded. */}
+      {/* Hold anywhere in this area (icon, image, name) for a moment to start
+          dragging - only the unit toggle and remove button, outside this
+          container, are excluded. Normal scrolling still works everywhere else. */}
       <div
-        onPointerDown={(e) => {
-          e.preventDefault();
-          controls.start(e);
-        }}
-        className="flex items-center gap-3 flex-1 min-w-0 cursor-grab active:cursor-grabbing touch-none"
+        onPointerDown={handlePointerDown}
+        style={{ touchAction: "pan-y" }}
+        className="flex items-center gap-3 flex-1 min-w-0 cursor-grab active:cursor-grabbing"
       >
         <div className="text-chalkdim flex-shrink-0 p-1">
           <DragHandleIcon />
@@ -178,9 +222,7 @@ export default function Routine() {
     <div className="min-h-screen max-w-lg mx-auto px-5 py-6">
       <div className="flex justify-between items-start mb-5">
         <h1 className="font-display text-3xl font-semibold">{t("addModifyRoutine")}</h1>
-        <Link to="/" className="text-sm text-chalkdim underline">
-          {t("backToToday")}
-        </Link>
+        <BackToStartLink />
       </div>
 
       <div className="flex gap-1.5 overflow-x-auto mb-5 pb-1">
