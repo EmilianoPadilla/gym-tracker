@@ -3,6 +3,7 @@ import BackToStartLink from "../components/BackToStartLink";
 import { Reorder, useDragControls } from "framer-motion";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
+import type { TranslationKey } from "../i18n/translations";
 import { useUnits } from "../units/UnitsContext";
 import ExercisePicker from "../components/ExercisePicker";
 import MarqueeText from "../components/MarqueeText";
@@ -19,7 +20,16 @@ type ExerciseItem = {
   order_index: number;
   preferred_unit: "kg" | "lbs";
   custom_image: string | null;
+  rest_seconds: number | null;
 };
+
+const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 210, 240];
+
+function formatRest(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s === 0 ? `${m}:00` : `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 function DragHandleIcon() {
   return (
@@ -42,11 +52,15 @@ function ExerciseRow({
   onRemove,
   onToggleUnit,
   onImageChange,
+  onRestChange,
+  t,
 }: {
   ex: ExerciseItem;
   onRemove: (id: number) => void;
   onToggleUnit: (id: number, unit: "kg" | "lbs") => void;
   onImageChange: (id: number, dataUrl: string) => void;
+  onRestChange: (id: number, restSeconds: number) => void;
+  t: (key: TranslationKey) => string;
 }) {
   const controls = useDragControls();
   const image = ex.custom_image || getExerciseImage(ex.name);
@@ -104,44 +118,64 @@ function ExerciseRow({
       value={ex}
       dragListener={false}
       dragControls={controls}
-      className={`flex items-center justify-between py-3 border-t border-hairline first:border-t-0 bg-charcoal select-none transition-colors ${
+      className={`py-3 border-t border-hairline first:border-t-0 bg-charcoal select-none transition-colors ${
         pressing ? "bg-panelraised" : ""
       }`}
     >
-      {/* Hold anywhere in this area (icon, image, name) for a moment to start
-          dragging - only the unit toggle and remove button, outside this
-          container, are excluded. Normal scrolling still works everywhere else. */}
-      <div
-        onPointerDown={handlePointerDown}
-        style={{ touchAction: "pan-y" }}
-        className="flex items-center gap-3 flex-1 min-w-0 cursor-grab active:cursor-grabbing"
-      >
-        <div className="text-chalkdim flex-shrink-0 p-1">
-          <DragHandleIcon />
+      <div className="flex items-center justify-between">
+        {/* Hold anywhere in this area (icon, image, name) for a moment to start
+            dragging - only the unit toggle and remove button, outside this
+            container, are excluded. Normal scrolling still works everywhere else. */}
+        <div
+          onPointerDown={handlePointerDown}
+          style={{ touchAction: "pan-y" }}
+          className="flex items-center gap-3 flex-1 min-w-0 cursor-grab active:cursor-grabbing"
+        >
+          <div className="text-chalkdim flex-shrink-0 p-1">
+            <DragHandleIcon />
+          </div>
+          <label
+            className="relative w-8 h-8 rounded-md bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim overflow-hidden cursor-pointer"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            {image ? (
+              <img src={image} alt="" className="w-full h-full object-cover" />
+            ) : (
+              ex.name[0]?.toUpperCase()
+            )}
+            <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
+          </label>
+          <MarqueeText text={ex.name} className="flex-1 min-w-0" />
         </div>
-        <label
-          className="relative w-8 h-8 rounded-md bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim overflow-hidden cursor-pointer"
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          {image ? (
-            <img src={image} alt="" className="w-full h-full object-cover" />
-          ) : (
-            ex.name[0]?.toUpperCase()
-          )}
-          <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
-        </label>
-        <MarqueeText text={ex.name} className="flex-1 min-w-0" />
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => onToggleUnit(ex.id, ex.preferred_unit === "kg" ? "lbs" : "kg")}
+            className="text-xs px-2 py-1 rounded-md border border-hairline text-chalkdim font-medium min-w-[38px]"
+          >
+            {ex.preferred_unit}
+          </button>
+          <button onClick={() => onRemove(ex.id)} className="text-chalkdim text-xl px-1" aria-label="Remove">
+            &times;
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <button
-          onClick={() => onToggleUnit(ex.id, ex.preferred_unit === "kg" ? "lbs" : "kg")}
-          className="text-xs px-2 py-1 rounded-md border border-hairline text-chalkdim font-medium min-w-[38px]"
+
+      <div className="flex items-center gap-2 mt-2 pl-11">
+        <span className="text-xs text-chalkdim flex-shrink-0">{t("restBetweenSets")}:</span>
+        <select
+          value={ex.rest_seconds ?? ""}
+          onChange={(e) => onRestChange(ex.id, parseInt(e.target.value))}
+          className="text-xs px-2 py-1 rounded-md bg-panel border border-hairline text-chalk"
         >
-          {ex.preferred_unit}
-        </button>
-        <button onClick={() => onRemove(ex.id)} className="text-chalkdim text-xl px-1" aria-label="Remove">
-          &times;
-        </button>
+          <option value="" disabled>
+            --:--
+          </option>
+          {REST_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {formatRest(s)}
+            </option>
+          ))}
+        </select>
       </div>
     </Reorder.Item>
   );
@@ -204,6 +238,11 @@ export default function Routine() {
   async function handleImageChange(id: number, dataUrl: string) {
     setExercises((prev) => prev.map((ex) => (ex.id === id ? { ...ex, custom_image: dataUrl } : ex)));
     await api.updateExerciseImage(id, dataUrl);
+  }
+
+  async function handleRestChange(id: number, restSeconds: number) {
+    setExercises((prev) => prev.map((ex) => (ex.id === id ? { ...ex, rest_seconds: restSeconds } : ex)));
+    await api.updateExerciseRest(id, restSeconds);
   }
 
   async function handleRemove(id: number) {
@@ -287,6 +326,8 @@ export default function Routine() {
                     onRemove={handleRemove}
                     onToggleUnit={handleToggleUnit}
                     onImageChange={handleImageChange}
+                    onRestChange={handleRestChange}
+                    t={t}
                   />
                 ))}
               </Reorder.Group>

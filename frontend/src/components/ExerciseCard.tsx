@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
 import { kgToUnit, unitToKg, type Unit } from "../units/UnitsContext";
 import { getExerciseImage } from "../data/exerciseLibrary";
+import { primeAudioContext, playDoubleBeep } from "../lib/beep";
 import MarqueeText from "./MarqueeText";
 
 type LogEntry = { id: number; date: string; weight: number; reps: number | null; sets: number | null };
@@ -12,6 +13,7 @@ type ExerciseWithStreak = {
   name: string;
   preferred_unit: Unit;
   custom_image: string | null;
+  rest_seconds: number | null;
   latest_weight: number | null;
   latest_date: string | null;
   streak: number;
@@ -50,6 +52,12 @@ function fmtDate(d: string) {
   return new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
+function formatClock(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export default function ExerciseCard({
   exercise,
   onLogged,
@@ -65,6 +73,16 @@ export default function ExerciseCard({
   const [saving, setSaving] = useState(false);
   const image = exercise.custom_image || getExerciseImage(exercise.name);
 
+  const restDuration = exercise.rest_seconds ?? 90; // sensible default if never set
+  const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
   async function handleSave() {
     const displayValue = parseFloat(weight);
     if (!displayValue || displayValue <= 0) return;
@@ -77,8 +95,34 @@ export default function ExerciseCard({
     }
   }
 
+  function startTimer() {
+    primeAudioContext(); // unlocks audio now, during the real user tap, for the beep later
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setSecondsLeft(restDuration);
+    intervalRef.current = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev === null) return null;
+        if (prev <= 1) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          playDoubleBeep();
+          setTimeout(() => setSecondsLeft(null), 1200); // briefly show 0:00, then reset
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }
+
+  function cancelTimer() {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = null;
+    setSecondsLeft(null);
+  }
+
   const coloredHistory = colorHistory(exercise.history);
   const hasHistory = coloredHistory.length > 0;
+  const timerRunning = secondsLeft !== null;
 
   return (
     <div className="border-t border-hairline py-4 first:border-t-0">
@@ -92,25 +136,46 @@ export default function ExerciseCard({
         )}
         <MarqueeText text={exercise.name} className="font-semibold flex-1 min-w-0" />
       </div>
-      <div className="flex items-center gap-2.5">
-        <div className="relative flex-1">
-          <input
-            type="number"
-            inputMode="decimal"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            placeholder="0"
-            className="w-full font-display text-2xl font-semibold rounded-lg bg-panel border border-hairline pl-3 pr-14 py-2 focus:outline-none focus:border-brasslight"
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-chalkdim text-sm">{unit}</span>
+
+      <div className="grid grid-cols-2 gap-3">
+        {/* Left half: weight + Save */}
+        <div className="flex flex-col gap-2">
+          <div className="relative">
+            <input
+              type="number"
+              inputMode="decimal"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              placeholder="0"
+              className="w-full font-display text-2xl font-semibold rounded-lg bg-panel border border-hairline pl-3 pr-12 py-2 focus:outline-none focus:border-brasslight"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-chalkdim text-sm">{unit}</span>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="h-11 rounded-lg bg-brass text-chalk font-semibold text-sm disabled:opacity-60"
+          >
+            {t("save")}
+          </button>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="h-11 px-4 rounded-lg bg-brass text-chalk font-semibold text-sm flex-shrink-0 disabled:opacity-60"
-        >
-          {t("save")}
-        </button>
+
+        {/* Right half: rest timer */}
+        <div className="flex flex-col gap-2">
+          <div
+            className={`w-full font-display text-2xl font-semibold rounded-lg border py-2 text-center ${
+              timerRunning ? "bg-panelraised border-brasslight" : "bg-panel border-hairline text-chalkdim"
+            }`}
+          >
+            {formatClock(secondsLeft ?? restDuration)}
+          </div>
+          <button
+            onClick={timerRunning ? cancelTimer : startTimer}
+            className="h-11 rounded-lg border border-hairline text-chalk font-semibold text-sm"
+          >
+            {timerRunning ? t("cancel") : t("startTimer")}
+          </button>
+        </div>
       </div>
 
       <div className="mt-3">

@@ -84,6 +84,12 @@ export const api = {
       body: JSON.stringify({ custom_image: dataUrl }),
     }),
 
+  updateExerciseRest: (id: number, restSeconds: number | null) =>
+    request(`/exercises/${id}/rest`, {
+      method: "PATCH",
+      body: JSON.stringify({ rest_seconds: restSeconds }),
+    }),
+
   deleteExercise: (id: number) => request(`/exercises/${id}`, { method: "DELETE" }),
 
   updateExerciseOrder: (id: number, orderIndex: number) =>

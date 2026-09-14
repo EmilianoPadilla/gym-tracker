@@ -52,6 +52,7 @@ class ExerciseOut(BaseModel):
     order_index: int
     preferred_unit: str
     custom_image: Optional[str] = None
+    rest_seconds: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -67,6 +68,10 @@ class ExerciseUnitUpdate(BaseModel):
 
 class ExerciseImageUpdate(BaseModel):
     custom_image: Optional[str] = None  # null clears it, falling back to the library image
+
+
+class ExerciseRestUpdate(BaseModel):
+    rest_seconds: Optional[int] = None
 
 
 # ---- Logs ----
@@ -96,6 +101,7 @@ class ExerciseWithStreak(BaseModel):
     order_index: int
     preferred_unit: str = "kg"
     custom_image: Optional[str] = None
+    rest_seconds: Optional[int] = None
     latest_weight: Optional[float] = None
     latest_date: Optional[date] = None
     streak: int = 0  # consecutive sessions at the same weight
