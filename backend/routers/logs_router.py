@@ -27,9 +27,29 @@ def add_log(
     if not exercise:
         raise HTTPException(status_code=404, detail="Exercise not found")
 
+    log_date = log.log_date or date.today()
+
+    # One entry per exercise per day - if today (or the given date) is already
+    # logged, this updates it in place instead of creating a duplicate. This
+    # is what lets someone fix a mistake by just re-saving from the same screen.
+    existing = (
+        db.query(models.Log)
+        .filter(models.Log.exercise_id == exercise_id, models.Log.date == log_date)
+        .first()
+    )
+    if existing:
+        existing.weight = log.weight
+        if log.reps is not None:
+            existing.reps = log.reps
+        if log.sets is not None:
+            existing.sets = log.sets
+        db.commit()
+        db.refresh(existing)
+        return existing
+
     new_log = models.Log(
         exercise_id=exercise_id,
-        date=log.log_date or date.today(),
+        date=log_date,
         weight=log.weight,
         reps=log.reps,
         sets=log.sets,

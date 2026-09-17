@@ -4,6 +4,7 @@ import { useLanguage } from "../i18n/LanguageContext";
 import { kgToUnit, unitToKg, type Unit } from "../units/UnitsContext";
 import { getExerciseImage } from "../data/exerciseLibrary";
 import { primeAudioContext, playDoubleBeep } from "../lib/beep";
+import { scheduleRestNotification, cancelRestNotification } from "../lib/nativeTimer";
 import MarqueeText from "./MarqueeText";
 
 type LogEntry = { id: number; date: string; weight: number; reps: number | null; sets: number | null };
@@ -48,8 +49,18 @@ const colorClasses: Record<ColoredEntry["color"], string> = {
   red: "text-[#E37568]",
 };
 
-function fmtDate(d: string) {
-  return new Date(d + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function fmtDate(d: string, language: string, todayLabel: string): string {
+  const dateObj = new Date(d + "T00:00:00");
+  const todayISO = new Date().toLocaleDateString("en-CA");
+  const weekday = capitalize(
+    dateObj.toLocaleDateString(language === "es" ? "es-ES" : "en-US", { weekday: "short" })
+  );
+  const weekdayDay = `${weekday} ${dateObj.getDate()}`;
+  return d === todayISO ? `${todayLabel}, ${weekdayDay}` : weekdayDay;
 }
 
 function formatClock(totalSeconds: number): string {
@@ -60,12 +71,14 @@ function formatClock(totalSeconds: number): string {
 
 export default function ExerciseCard({
   exercise,
-  onLogged,
+  onSaved,
+  inputRef,
 }: {
   exercise: ExerciseWithStreak;
-  onLogged: () => void;
+  onSaved: () => void;
+  inputRef?: (el: HTMLInputElement | null) => void;
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const unit = exercise.preferred_unit;
   const [weight, setWeight] = useState(
     exercise.latest_weight != null ? kgToUnit(exercise.latest_weight, unit).toString() : ""
@@ -89,7 +102,7 @@ export default function ExerciseCard({
     setSaving(true);
     try {
       await api.addLog(exercise.id, unitToKg(displayValue, unit));
-      onLogged();
+      onSaved();
     } finally {
       setSaving(false);
     }
@@ -99,6 +112,12 @@ export default function ExerciseCard({
     primeAudioContext(); // unlocks audio now, during the real user tap, for the beep later
     if (intervalRef.current) clearInterval(intervalRef.current);
     setSecondsLeft(restDuration);
+    scheduleRestNotification(
+      exercise.id,
+      restDuration,
+      t("restComplete"),
+      exercise.name
+    );
     intervalRef.current = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev === null) return null;
@@ -118,6 +137,7 @@ export default function ExerciseCard({
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = null;
     setSecondsLeft(null);
+    cancelRestNotification(exercise.id);
   }
 
   const coloredHistory = colorHistory(exercise.history);
@@ -142,6 +162,7 @@ export default function ExerciseCard({
         <div className="flex flex-col gap-2">
           <div className="relative">
             <input
+              ref={inputRef}
               type="number"
               inputMode="decimal"
               value={weight}
@@ -193,7 +214,7 @@ export default function ExerciseCard({
                   <span className={`font-display block text-base font-semibold ${colorClasses[h.color]}`}>
                     {kgToUnit(h.weight, unit)}
                   </span>
-                  <span className="block text-[10px] text-chalkdim mt-0.5">{fmtDate(h.date)}</span>
+                  <span className="block text-[10px] text-chalkdim mt-0.5">{fmtDate(h.date, language, t("today"))}</span>
                 </div>
               ))}
             </div>

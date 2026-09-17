@@ -61,6 +61,8 @@ export const translations = {
     restBetweenSets: "Rest between sets",
     startTimer: "Start timer",
     cancel: "Cancel",
+    today: "Today",
+    restComplete: "Rest complete",
   },
   es: {
     createAccount: "Crea tu cuenta",
@@ -124,6 +126,8 @@ export const translations = {
     restBetweenSets: "Tiempo entre sets",
     startTimer: "Iniciar temporizador",
     cancel: "Cancelar",
+    today: "Hoy",
+    restComplete: "Descanso terminado",
   },
 };
 

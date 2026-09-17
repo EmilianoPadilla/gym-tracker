@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
@@ -6,6 +6,7 @@ import { useLanguage } from "../i18n/LanguageContext";
 import ExerciseCard from "../components/ExerciseCard";
 import HamburgerMenu from "../components/HamburgerMenu";
 import MarqueeText from "../components/MarqueeText";
+import FloatingTimer from "../components/FloatingTimer";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -18,6 +19,7 @@ export default function Today() {
   const [dayLabel, setDayLabel] = useState("");
   const [isRestDay, setIsRestDay] = useState(false);
   const [labelsLoaded, setLabelsLoaded] = useState(false);
+  const inputRefsMap = useRef<Record<number, HTMLInputElement | null>>({});
 
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
   const jsDay = new Date().getDay(); // 0=Sunday
@@ -27,7 +29,8 @@ export default function Today() {
     day: "numeric",
   });
 
-  async function load() {
+  // Used only for the very first load - shows the "Loading..." state.
+  async function loadInitial() {
     setLoading(true);
     try {
       const data = await api.getToday(dayIndex);
@@ -37,8 +40,20 @@ export default function Today() {
     }
   }
 
+  // Used to refresh data after saving a weight, WITHOUT touching `loading` -
+  // this is what keeps the save seamless instead of flashing back to a
+  // "Loading..." screen and losing scroll position every time.
+  async function refreshSilently() {
+    try {
+      const data = await api.getToday(dayIndex);
+      setExercises(data);
+    } catch {
+      // A silent background refresh failing isn't worth surfacing an error for
+    }
+  }
+
   useEffect(() => {
-    load();
+    loadInitial();
     api.getDayLabels().then((rows: { day_of_week: number; label: string; is_rest_day: boolean }[]) => {
       const match = rows.find((r) => r.day_of_week === dayIndex);
       setDayLabel(match?.label ?? "");
@@ -46,6 +61,24 @@ export default function Today() {
       setLabelsLoaded(true);
     });
   }, []);
+
+  function handleSaved(exerciseId: number) {
+    refreshSilently();
+    if (!exercises) return;
+    const idx = exercises.findIndex((e) => e.id === exerciseId);
+    if (idx >= 0 && idx < exercises.length - 1) {
+      const nextId = exercises[idx + 1].id;
+      // Small delay so this runs after the current render settles.
+      setTimeout(() => {
+        const el = inputRefsMap.current[nextId];
+        if (el) {
+          el.focus();
+          el.select();
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 50);
+    }
+  }
 
   const menuItems = [
     { to: "/history", label: t("history") },
@@ -105,9 +138,18 @@ export default function Today() {
             </Link>
           </div>
         ) : (
-          exercises.map((ex) => <ExerciseCard key={ex.id} exercise={ex} onLogged={load} />)
+          exercises.map((ex) => (
+            <ExerciseCard
+              key={ex.id}
+              exercise={ex}
+              onSaved={() => handleSaved(ex.id)}
+              inputRef={(el) => (inputRefsMap.current[ex.id] = el)}
+            />
+          ))
         )}
       </div>
+
+      {!isRestDay && <FloatingTimer />}
     </div>
   );
 }

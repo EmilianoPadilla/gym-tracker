@@ -45,3 +45,11 @@ body {
 .marquee-scroll {
   animation: marquee-scroll 7s ease-in-out infinite;
 }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
