@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { primeAudioContext, playDoubleBeep } from "../lib/beep";
 import { scheduleRestNotification, cancelRestNotification } from "../lib/nativeTimer";
 import { useLanguage } from "../i18n/LanguageContext";
-import NumberWheel from "./NumberWheel";
 
 function formatClock(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
@@ -22,6 +21,9 @@ function ClockIcon() {
 // Negative ID reserved for the floating timer, since real exercise IDs (used
 // as notification IDs in ExerciseCard) are always positive - guarantees no collision.
 const FLOATING_TIMER_NOTIFICATION_ID = -1;
+
+const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, i) => i);
+const SECOND_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
 export default function FloatingTimer() {
   const { t } = useLanguage();
@@ -77,11 +79,30 @@ export default function FloatingTimer() {
     >
       {open && (
         <div className="mb-3 bg-panel border border-hairline rounded-2xl p-4 shadow-lg flex flex-col items-center gap-3">
-          <div className="relative flex items-center">
-            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-8 bg-panelraised rounded-lg pointer-events-none" />
-            <NumberWheel min={0} max={59} value={minutes} onChange={setMinutes} />
-            <span className="font-display text-2xl font-semibold px-1">:</span>
-            <NumberWheel min={0} max={55} step={5} value={seconds} onChange={setSeconds} pad />
+          <div className="flex items-center gap-2">
+            <select
+              value={minutes}
+              onChange={(e) => setMinutes(parseInt(e.target.value))}
+              className="font-display text-2xl font-semibold rounded-lg bg-panelraised border border-hairline px-3 py-2 text-center"
+            >
+              {MINUTE_OPTIONS.map((m) => (
+                <option key={m} value={m}>
+                  {m.toString().padStart(2, "0")}
+                </option>
+              ))}
+            </select>
+            <span className="font-display text-2xl font-semibold">:</span>
+            <select
+              value={seconds}
+              onChange={(e) => setSeconds(parseInt(e.target.value))}
+              className="font-display text-2xl font-semibold rounded-lg bg-panelraised border border-hairline px-3 py-2 text-center"
+            >
+              {SECOND_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s.toString().padStart(2, "0")}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex gap-2 w-full">
             <button
@@ -110,15 +131,8 @@ export default function FloatingTimer() {
         <span className="font-display font-semibold text-xs">{formatClock(displaySeconds)}</span>
       </button>
 
-      {/* Curved caption hugging the bottom of the circle, like a badge label */}
-      <svg width="80" height="22" viewBox="0 0 80 22" className="-mt-1 pointer-events-none">
-        <path id="floatingTimerCurve" d="M 5 5 A 35 35 0 0 1 75 5" fill="transparent" />
-        <text textAnchor="middle" className="fill-chalkdim" style={{ fontSize: 9, letterSpacing: 1 }}>
-          <textPath href="#floatingTimerCurve" xlinkHref="#floatingTimerCurve" startOffset="50%">
-            {t("customTimer")}
-          </textPath>
-        </text>
-      </svg>
+      {/* Caption below the circle - plain text, since curved SVG text wasn't rendering reliably */}
+      <span className="text-[10px] text-chalkdim mt-1 tracking-wide">{t("customTimer")}</span>
     </div>
   );
 }
