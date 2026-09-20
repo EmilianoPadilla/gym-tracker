@@ -144,7 +144,7 @@ export default function Today() {
         <HamburgerMenu items={menuItems} />
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-2 mt-4 mb-2">
+      <div className="flex items-center justify-between gap-2 mt-4 mb-2">
         <button
           onClick={goToPreviousDay}
           className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-hairline text-chalkdim text-sm"

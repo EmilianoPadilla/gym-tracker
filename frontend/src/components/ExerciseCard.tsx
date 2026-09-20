@@ -154,7 +154,7 @@ export default function ExerciseCard({
           </div>
         )}
 
-        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+        <div className="flex-1 min-w-0 flex flex-col gap-1">
           <MarqueeText text={exercise.name} className="font-bold text-lg" />
 
           <div className="grid grid-cols-2 gap-1.5">
@@ -168,7 +168,7 @@ export default function ExerciseCard({
                 placeholder="0"
                 className="w-full font-display text-base font-semibold rounded-lg bg-panel border border-hairline pl-2 pr-8 py-1.5 focus:outline-none focus:border-brasslight"
               />
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-chalkdim text-[10px]">{unit}</span>
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-chalkdim text-sm">{unit}</span>
             </div>
             <div
               className={`font-display text-base font-semibold rounded-lg border py-1.5 text-center whitespace-nowrap ${
@@ -183,13 +183,13 @@ export default function ExerciseCard({
             <button
               onClick={handleSave}
               disabled={saving}
-              className="rounded-lg bg-brass text-chalk font-semibold text-sm py-1.5 disabled:opacity-60"
+              className="rounded-lg bg-brass text-chalk font-semibold text-sm py-1 disabled:opacity-60"
             >
               {t("save")}
             </button>
             <button
               onClick={timerRunning ? cancelTimer : startTimer}
-              className="rounded-lg border border-hairline text-chalk font-semibold text-sm py-1.5 whitespace-nowrap"
+              className="rounded-lg border border-hairline text-chalk font-semibold text-sm py-1 whitespace-nowrap"
             >
               {timerRunning ? t("cancel") : t("timerLabel")}
             </button>
