@@ -145,7 +145,7 @@ export default function ExerciseCard({
 
   return (
     <div className="border-t border-hairline py-2.5 first:border-t-0">
-      <div className="flex gap-3">
+      <div className="flex gap-3 items-start">
         {image ? (
           <img src={image} alt="" className="w-24 h-24 rounded-lg object-cover flex-shrink-0 bg-panel" />
         ) : (
@@ -154,8 +154,8 @@ export default function ExerciseCard({
           </div>
         )}
 
-        <div className="flex-1 min-w-0 flex flex-col gap-1">
-          <MarqueeText text={exercise.name} className="font-bold text-lg" />
+        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+          <MarqueeText text={exercise.name} className="font-bold text-lg leading-none" />
 
           <div className="grid grid-cols-2 gap-1.5">
             <div className="relative">

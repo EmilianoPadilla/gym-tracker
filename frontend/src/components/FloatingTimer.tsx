@@ -18,6 +18,35 @@ function ClockIcon() {
   );
 }
 
+// Curves text along an arc below a circle by rotating each letter individually
+// around a shared pivot point - pure CSS, no SVG textPath (which didn't render
+// reliably across environments). The pivot sits at the circle's own center,
+// so letters land just outside its rim, following the curve.
+function CurvedCaption({ text, radius }: { text: string; radius: number }) {
+  const chars = text.split("");
+  const totalArc = 110; // degrees the caption spans across the bottom of the circle
+  const step = chars.length > 1 ? totalArc / (chars.length - 1) : 0;
+  const start = -totalArc / 2;
+
+  return (
+    <div className="absolute left-1/2 top-1/2 w-0 h-0 pointer-events-none">
+      {chars.map((c, i) => (
+        <span
+          key={i}
+          className="absolute left-0 top-0 text-chalkdim font-medium"
+          style={{
+            fontSize: 9,
+            transformOrigin: "0 0",
+            transform: `rotate(${-(start + i * step)}deg) translateY(${radius}px)`,
+          }}
+        >
+          {c === " " ? "\u00A0" : c}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // Negative ID reserved for the floating timer, since real exercise IDs (used
 // as notification IDs in ExerciseCard) are always positive - guarantees no collision.
 const FLOATING_TIMER_NOTIFICATION_ID = -1;
@@ -121,18 +150,18 @@ export default function FloatingTimer() {
         </div>
       )}
 
-      <button
-        onClick={() => (running ? cancelTimer() : setOpen((o) => !o))}
-        className={`w-16 h-16 rounded-full border shadow-lg flex flex-col items-center justify-center gap-0.5 ${
-          running ? "bg-panelraised border-brasslight text-chalk" : "bg-panel border-hairline text-chalkdim"
-        }`}
-      >
-        <ClockIcon />
-        <span className="font-display font-semibold text-xs">{formatClock(displaySeconds)}</span>
-      </button>
-
-      {/* Caption below the circle - plain text, since curved SVG text wasn't rendering reliably */}
-      <span className="text-[10px] text-chalkdim mt-1 tracking-wide">{t("customTimer")}</span>
+      <div className="relative w-16 h-16">
+        <button
+          onClick={() => (running ? cancelTimer() : setOpen((o) => !o))}
+          className={`w-16 h-16 rounded-full border shadow-lg flex flex-col items-center justify-center gap-0.5 ${
+            running ? "bg-panelraised border-brasslight text-chalk" : "bg-panel border-hairline text-chalkdim"
+          }`}
+        >
+          <ClockIcon />
+          <span className="font-display font-semibold text-xs">{formatClock(displaySeconds)}</span>
+        </button>
+        <CurvedCaption text={t("customTimer")} radius={40} />
+      </div>
     </div>
   );
 }
