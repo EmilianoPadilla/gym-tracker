@@ -144,61 +144,60 @@ export default function ExerciseCard({
   const timerRunning = secondsLeft !== null;
 
   return (
-    <div className="border-t border-hairline py-2 first:border-t-0">
-      <div className="flex items-center gap-2 mb-1.5">
+    <div className="border-t border-hairline py-2.5 first:border-t-0">
+      <div className="flex gap-3">
         {image ? (
-          <img src={image} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0 bg-panel" />
+          <img src={image} alt="" className="w-24 h-24 rounded-lg object-cover flex-shrink-0 bg-panel" />
         ) : (
-          <div className="w-8 h-8 rounded-lg bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim">
+          <div className="w-24 h-24 rounded-lg bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-2xl text-chalkdim">
             {exercise.name[0]?.toUpperCase()}
           </div>
         )}
-        <MarqueeText text={exercise.name} className="font-bold text-lg flex-1 min-w-0" />
+
+        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+          <MarqueeText text={exercise.name} className="font-bold text-lg" />
+
+          <div className="grid grid-cols-2 gap-1.5">
+            <div className="relative">
+              <input
+                ref={inputRef}
+                type="number"
+                inputMode="decimal"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder="0"
+                className="w-full font-display text-base font-semibold rounded-lg bg-panel border border-hairline pl-2 pr-8 py-1.5 focus:outline-none focus:border-brasslight"
+              />
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-chalkdim text-[10px]">{unit}</span>
+            </div>
+            <div
+              className={`font-display text-base font-semibold rounded-lg border py-1.5 text-center whitespace-nowrap ${
+                timerRunning ? "bg-panelraised border-brasslight" : "bg-panel border-hairline text-chalkdim"
+              }`}
+            >
+              {formatClock(secondsLeft ?? restDuration)}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="rounded-lg bg-brass text-chalk font-semibold text-sm py-1.5 disabled:opacity-60"
+            >
+              {t("save")}
+            </button>
+            <button
+              onClick={timerRunning ? cancelTimer : startTimer}
+              className="rounded-lg border border-hairline text-chalk font-semibold text-sm py-1.5 whitespace-nowrap"
+            >
+              {timerRunning ? t("cancel") : t("timerLabel")}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-1.5">
-        {/* Left half: weight + Save */}
-        <div className="flex flex-col gap-1">
-          <div className="relative">
-            <input
-              ref={inputRef}
-              type="number"
-              inputMode="decimal"
-              value={weight}
-              onChange={(e) => setWeight(e.target.value)}
-              placeholder="0"
-              className="w-full font-display text-base font-semibold rounded-lg bg-panel border border-hairline pl-3 pr-9 py-1 focus:outline-none focus:border-brasslight"
-            />
-            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-chalkdim text-xs">{unit}</span>
-          </div>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="h-8 rounded-lg bg-brass text-chalk font-semibold text-sm disabled:opacity-60"
-          >
-            {t("save")}
-          </button>
-        </div>
-
-        {/* Right half: rest timer */}
-        <div className="flex flex-col gap-1">
-          <div
-            className={`w-full font-display text-base font-semibold rounded-lg border py-1 text-center whitespace-nowrap ${
-              timerRunning ? "bg-panelraised border-brasslight" : "bg-panel border-hairline text-chalkdim"
-            }`}
-          >
-            {formatClock(secondsLeft ?? restDuration)}
-          </div>
-          <button
-            onClick={timerRunning ? cancelTimer : startTimer}
-            className="h-8 rounded-lg border border-hairline text-chalk font-semibold text-sm whitespace-nowrap"
-          >
-            {timerRunning ? t("cancel") : t("timerLabel")}
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-1.5">
+      <div className="mt-2">
         {!hasHistory ? (
           <span className="text-chalkdim text-xs">{t("noHistoryYet")}</span>
         ) : (

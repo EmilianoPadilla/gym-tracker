@@ -71,7 +71,10 @@ export default function FloatingTimer() {
   const displaySeconds = secondsLeft !== null ? secondsLeft : minutes * 60 + seconds;
 
   return (
-    <div className="fixed bottom-5 right-5 z-40 flex flex-col items-center">
+    <div
+      className="fixed right-5 z-40 flex flex-col items-center"
+      style={{ bottom: "calc(1.75rem + env(safe-area-inset-bottom, 0px))" }}
+    >
       {open && (
         <div className="mb-3 bg-panel border border-hairline rounded-2xl p-4 shadow-lg flex flex-col items-center gap-3">
           <div className="relative flex items-center">
@@ -108,9 +111,9 @@ export default function FloatingTimer() {
       </button>
 
       {/* Curved caption hugging the bottom of the circle, like a badge label */}
-      <svg width="72" height="20" viewBox="0 0 72 20" className="-mt-0.5 pointer-events-none">
-        <path id="floatingTimerCurve" d="M 4 4 A 32 32 0 0 1 68 4" fill="transparent" />
-        <text textAnchor="middle" className="fill-chalkdim" style={{ fontSize: 8, letterSpacing: 1 }}>
+      <svg width="80" height="22" viewBox="0 0 80 22" className="-mt-1 pointer-events-none">
+        <path id="floatingTimerCurve" d="M 5 5 A 35 35 0 0 1 75 5" fill="transparent" />
+        <text textAnchor="middle" className="fill-chalkdim" style={{ fontSize: 9, letterSpacing: 1 }}>
           <textPath href="#floatingTimerCurve" xlinkHref="#floatingTimerCurve" startOffset="50%">
             {t("customTimer")}
           </textPath>
