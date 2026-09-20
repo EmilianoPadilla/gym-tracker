@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #0F1626;
+  color: #EDE7DD;
+  font-family: "Work Sans", sans-serif;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* The layout is mobile-first (narrow centered column), which reads as
+   too small on a full desktop monitor. Bumping the root font size scales
+   every rem-based Tailwind utility (text, padding, gaps, widths) together,
+   so the same design just renders comfortably larger on bigger screens
+   instead of looking like a tiny mobile view floating in empty space. */
+@media (min-width: 768px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 1280px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+/* Slowly scrolls overflowing text to reveal the hidden end, pauses, then
+   scrolls back to the start and pauses again, looping. Only applied when
+   text actually overflows its container (see MarqueeText.tsx). */
+@keyframes marquee-scroll {
+  0%, 15% {
+    transform: translateX(0);
+  }
+  45%, 60% {
+    transform: translateX(var(--marquee-distance));
+  }
+  90%, 100% {
+    transform: translateX(0);
+  }
+}
+
+.marquee-scroll {
+  animation: marquee-scroll 7s ease-in-out infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
