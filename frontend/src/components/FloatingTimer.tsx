@@ -21,26 +21,45 @@ function ClockIcon() {
 // Curves text along an arc below a circle by rotating each letter individually
 // around a shared pivot point - pure CSS, no SVG textPath (which didn't render
 // reliably across environments). The pivot sits at the circle's own center,
-// so letters land just outside its rim, following the curve.
+// so letters land just outside its rim, following the curve. Angles are based
+// on each character's actual measured width (via canvas), not just an equal
+// split per letter - otherwise narrow letters like "i" end up with the same
+// gap as wide ones like "m", looking visibly uneven.
 function CurvedCaption({ text, radius }: { text: string; radius: number }) {
-  const chars = text.split("");
-  const totalArc = 110; // degrees the caption spans across the bottom of the circle
-  const step = chars.length > 1 ? totalArc / (chars.length - 1) : 0;
-  const start = -totalArc / 2;
+  const [letters, setLetters] = useState<{ char: string; angle: number }[]>([]);
+
+  useEffect(() => {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.font = "500 11px 'Work Sans', sans-serif";
+    const chars = text.split("");
+    const widths = chars.map((c) => ctx.measureText(c === " " ? "\u00A0" : c).width + 1.5);
+    const totalWidth = widths.reduce((a, b) => a + b, 0);
+    let cumulative = 0;
+    setLetters(
+      chars.map((c, i) => {
+        const center = cumulative + widths[i] / 2;
+        cumulative += widths[i];
+        const angleRad = (center - totalWidth / 2) / radius;
+        return { char: c, angle: (angleRad * 180) / Math.PI };
+      })
+    );
+  }, [text, radius]);
 
   return (
     <div className="absolute left-1/2 top-1/2 w-0 h-0 pointer-events-none">
-      {chars.map((c, i) => (
+      {letters.map(({ char, angle }, i) => (
         <span
           key={i}
           className="absolute left-0 top-0 text-chalkdim font-medium"
           style={{
             fontSize: 11,
             transformOrigin: "0 0",
-            transform: `rotate(${-(start + i * step)}deg) translateY(${radius}px)`,
+            transform: `rotate(${-angle}deg) translateY(${radius}px)`,
           }}
         >
-          {c === " " ? "\u00A0" : c}
+          {char === " " ? "\u00A0" : char}
         </span>
       ))}
     </div>
@@ -51,8 +70,8 @@ function CurvedCaption({ text, radius }: { text: string; radius: number }) {
 // as notification IDs in ExerciseCard) are always positive - guarantees no collision.
 const FLOATING_TIMER_NOTIFICATION_ID = -1;
 
-const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, i) => i);
-const SECOND_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+const MINUTE_OPTIONS = Array.from({ length: 11 }, (_, i) => i); // 0-10 min - rest never needs more
+const SECOND_OPTIONS = [0, 10, 20, 30, 40, 50];
 
 export default function FloatingTimer() {
   const { t } = useLanguage();

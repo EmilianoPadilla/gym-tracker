@@ -155,7 +155,7 @@ export default function ExerciseCard({
         )}
 
         <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-          <MarqueeText text={exercise.name} className="font-bold text-lg leading-none" />
+          <MarqueeText text={exercise.name} className="font-bold text-lg leading-tight" />
 
           <div className="grid grid-cols-2 gap-1.5">
             <div className="relative">
@@ -210,7 +210,7 @@ export default function ExerciseCard({
                   className="flex-shrink-0 bg-panel border border-hairline rounded-lg px-2.5 py-1 text-center min-w-[54px]"
                 >
                   <span className={`font-display block text-sm font-semibold ${colorClasses[h.color]}`}>
-                    {kgToUnit(h.weight, unit)}
+                    {kgToUnit(h.weight, unit)} <span className="text-[9px] font-normal">{unit}</span>
                   </span>
                   <span className="block text-[10px] text-chalkdim mt-0.5">{fmtDate(h.date, language, t("today"))}</span>
                 </div>
