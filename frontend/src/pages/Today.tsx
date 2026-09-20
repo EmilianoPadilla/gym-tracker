@@ -159,13 +159,14 @@ export default function Today() {
             {t("today")}
           </button>
         )}
-        <button
-          onClick={goToNextDay}
-          disabled={isActuallyToday}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-hairline text-chalkdim text-sm disabled:opacity-30"
-        >
-          {t("nextDay")} &rsaquo;
-        </button>
+        {!isActuallyToday && (
+          <button
+            onClick={goToNextDay}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-hairline text-chalkdim text-sm"
+          >
+            {t("nextDay")} &rsaquo;
+          </button>
+        )}
       </div>
 
       <div className="mt-4">

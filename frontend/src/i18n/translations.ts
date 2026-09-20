@@ -138,7 +138,7 @@ export const translations = {
     previousDay: "Día anterior",
     nextDay: "Día siguiente",
     timerLabel: "Timer",
-    customTimer: "Custom timer",
+    customTimer: "custom timer",
     developedBy: "Desarrollado por Emiliano Padilla",
     welcomeNoRoutineTitle: "¡Bienvenido!",
     welcomeNoRoutineMessage: "No tienes una rutina aún, añade tu rutina aquí.",

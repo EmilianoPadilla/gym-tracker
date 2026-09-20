@@ -111,7 +111,7 @@ export default function FloatingTimer() {
       <svg width="72" height="20" viewBox="0 0 72 20" className="-mt-0.5 pointer-events-none">
         <path id="floatingTimerCurve" d="M 4 4 A 32 32 0 0 1 68 4" fill="transparent" />
         <text textAnchor="middle" className="fill-chalkdim" style={{ fontSize: 8, letterSpacing: 1 }}>
-          <textPath href="#floatingTimerCurve" startOffset="50%">
+          <textPath href="#floatingTimerCurve" xlinkHref="#floatingTimerCurve" startOffset="50%">
             {t("customTimer")}
           </textPath>
         </text>

@@ -144,21 +144,21 @@ export default function ExerciseCard({
   const timerRunning = secondsLeft !== null;
 
   return (
-    <div className="border-t border-hairline py-2.5 first:border-t-0">
-      <div className="flex items-center gap-2 mb-2">
+    <div className="border-t border-hairline py-2 first:border-t-0">
+      <div className="flex items-center gap-2 mb-1.5">
         {image ? (
-          <img src={image} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0 bg-panel" />
+          <img src={image} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0 bg-panel" />
         ) : (
-          <div className="w-9 h-9 rounded-lg bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim">
+          <div className="w-8 h-8 rounded-lg bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim">
             {exercise.name[0]?.toUpperCase()}
           </div>
         )}
         <MarqueeText text={exercise.name} className="font-bold text-lg flex-1 min-w-0" />
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-1.5">
         {/* Left half: weight + Save */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
           <div className="relative">
             <input
               ref={inputRef}
@@ -167,23 +167,23 @@ export default function ExerciseCard({
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               placeholder="0"
-              className="w-full font-display text-lg font-semibold rounded-lg bg-panel border border-hairline pl-3 pr-10 py-1.5 focus:outline-none focus:border-brasslight"
+              className="w-full font-display text-base font-semibold rounded-lg bg-panel border border-hairline pl-3 pr-9 py-1 focus:outline-none focus:border-brasslight"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-chalkdim text-xs">{unit}</span>
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-chalkdim text-xs">{unit}</span>
           </div>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="h-9 rounded-lg bg-brass text-chalk font-semibold text-sm disabled:opacity-60"
+            className="h-8 rounded-lg bg-brass text-chalk font-semibold text-sm disabled:opacity-60"
           >
             {t("save")}
           </button>
         </div>
 
         {/* Right half: rest timer */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1">
           <div
-            className={`w-full font-display text-lg font-semibold rounded-lg border py-1.5 text-center whitespace-nowrap ${
+            className={`w-full font-display text-base font-semibold rounded-lg border py-1 text-center whitespace-nowrap ${
               timerRunning ? "bg-panelraised border-brasslight" : "bg-panel border-hairline text-chalkdim"
             }`}
           >
@@ -191,14 +191,14 @@ export default function ExerciseCard({
           </div>
           <button
             onClick={timerRunning ? cancelTimer : startTimer}
-            className="h-9 rounded-lg border border-hairline text-chalk font-semibold text-sm whitespace-nowrap"
+            className="h-8 rounded-lg border border-hairline text-chalk font-semibold text-sm whitespace-nowrap"
           >
             {timerRunning ? t("cancel") : t("timerLabel")}
           </button>
         </div>
       </div>
 
-      <div className="mt-2">
+      <div className="mt-1.5">
         {!hasHistory ? (
           <span className="text-chalkdim text-xs">{t("noHistoryYet")}</span>
         ) : (
