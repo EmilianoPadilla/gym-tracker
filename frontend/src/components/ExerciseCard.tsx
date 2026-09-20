@@ -154,7 +154,7 @@ export default function ExerciseCard({
           </div>
         )}
 
-        <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
           <MarqueeText text={exercise.name} className="font-bold text-lg leading-none" />
 
           <div className="grid grid-cols-2 gap-1.5">

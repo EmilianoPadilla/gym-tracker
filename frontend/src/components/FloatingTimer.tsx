@@ -35,7 +35,7 @@ function CurvedCaption({ text, radius }: { text: string; radius: number }) {
           key={i}
           className="absolute left-0 top-0 text-chalkdim font-medium"
           style={{
-            fontSize: 9,
+            fontSize: 11,
             transformOrigin: "0 0",
             transform: `rotate(${-(start + i * step)}deg) translateY(${radius}px)`,
           }}
@@ -160,7 +160,7 @@ export default function FloatingTimer() {
           <ClockIcon />
           <span className="font-display font-semibold text-xs">{formatClock(displaySeconds)}</span>
         </button>
-        <CurvedCaption text={t("customTimer")} radius={40} />
+        <CurvedCaption text={t("customTimer")} radius={44} />
       </div>
     </div>
   );
