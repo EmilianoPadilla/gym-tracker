@@ -166,12 +166,12 @@ export default function ExerciseCard({
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 placeholder="0"
-                className="w-full font-display text-base font-semibold rounded-lg bg-panel border border-hairline pl-2 pr-8 py-1 focus:outline-none focus:border-brasslight"
+                className="w-full font-display text-sm font-semibold rounded-lg bg-panel border border-hairline pl-2 pr-8 py-1 focus:outline-none focus:border-brasslight"
               />
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-chalkdim text-sm">{unit}</span>
             </div>
             <div
-              className={`font-display text-base font-semibold rounded-lg border py-1 text-center whitespace-nowrap ${
+              className={`font-display text-sm font-semibold rounded-lg border py-1 text-center whitespace-nowrap ${
                 timerRunning ? "bg-panelraised border-brasslight" : "bg-panel border-hairline text-chalkdim"
               }`}
             >
@@ -189,7 +189,7 @@ export default function ExerciseCard({
             </button>
             <button
               onClick={timerRunning ? cancelTimer : startTimer}
-              className="rounded-lg border border-hairline text-chalk font-semibold text-sm py-1 whitespace-nowrap"
+              className="rounded-lg bg-amber-800 text-white font-semibold text-sm py-1 whitespace-nowrap"
             >
               {timerRunning ? t("cancel") : t("timerLabel")}
             </button>

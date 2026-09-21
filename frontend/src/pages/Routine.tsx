@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import BackToStartLink from "../components/BackToStartLink";
 import { Reorder, useDragControls } from "framer-motion";
 import { api } from "../api/client";
@@ -12,6 +13,16 @@ import { resizeImageToDataUrl } from "../lib/resizeImage";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const DAYS_PLURAL_EN = ["Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays", "Sundays"];
+const DAYS_PLURAL_ES = [
+  "los lunes",
+  "los martes",
+  "los miércoles",
+  "los jueves",
+  "los viernes",
+  "los sábados",
+  "los domingos",
+];
 
 type ExerciseItem = {
   id: number;
@@ -186,7 +197,11 @@ export default function Routine() {
   const { unit: defaultUnit } = useUnits();
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
   const jsDay = new Date().getDay();
-  const [activeDay, setActiveDay] = useState(jsDay === 0 ? 6 : jsDay - 1);
+  const [searchParams] = useSearchParams();
+  const dayFromUrl = searchParams.get("day");
+  const [activeDay, setActiveDay] = useState(
+    dayFromUrl !== null ? parseInt(dayFromUrl) : jsDay === 0 ? 6 : jsDay - 1
+  );
   const [exercises, setExercises] = useState<ExerciseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [dayLabel, setDayLabel] = useState("");
@@ -257,19 +272,23 @@ export default function Routine() {
     );
   }
 
+  const DAYS_PLURAL = language === "es" ? DAYS_PLURAL_ES : DAYS_PLURAL_EN;
+  const routineTitle =
+    language === "es" ? `Modificar rutina de ${DAYS_PLURAL[activeDay]}` : `Edit routine for ${DAYS_PLURAL[activeDay]}`;
+
   return (
-    <div className="min-h-screen max-w-lg mx-auto px-5 py-6">
+    <div className="min-h-screen max-w-lg mx-auto px-5 py-6 flex flex-col">
       <div className="flex justify-between items-start mb-5">
-        <h1 className="font-display text-3xl font-semibold">{t("addModifyRoutine")}</h1>
+        <h1 className="font-display text-2xl font-semibold">{routineTitle}</h1>
         <BackToStartLink />
       </div>
 
-      <div className="flex gap-1.5 overflow-x-auto mb-5 pb-1">
+      <div className="flex gap-1 overflow-x-auto mb-5 pb-1">
         {DAYS.map((d, i) => (
           <button
             key={d}
             onClick={() => setActiveDay(i)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm border ${
+            className={`flex-shrink-0 px-2.5 py-1.5 rounded-full text-sm border ${
               i === activeDay
                 ? "bg-brass text-chalk border-brass font-semibold"
                 : "border-hairline text-chalkdim"
@@ -278,19 +297,6 @@ export default function Routine() {
             {d.slice(0, 3)}
           </button>
         ))}
-      </div>
-
-      <div className="flex gap-2 mb-3">
-        <input
-          value={dayLabel}
-          onChange={(e) => {
-            setDayLabel(e.target.value);
-            setLabelSaved(false);
-          }}
-          onBlur={() => !labelSaved && handleSaveLabel()}
-          placeholder={t("nameThisDay")}
-          className="flex-1 rounded-lg bg-panel border border-hairline px-3 py-2 text-sm text-chalk focus:outline-none focus:border-brasslight"
-        />
       </div>
 
       <label className="flex items-center gap-2 mb-5 text-sm text-chalkdim cursor-pointer">
@@ -303,45 +309,62 @@ export default function Routine() {
         {t("restDay")}
       </label>
 
-      {isRestDay ? (
-        <p className="text-chalkdim text-sm text-center py-8">{t("restDayNoExercisesNeeded")}</p>
-      ) : (
-        <>
-          <ExercisePicker onAdd={handleAdd} />
+      <p className="text-sm font-semibold mb-1.5">{t("nameThisDayLabel")}</p>
+      <div className="flex gap-2 mb-5">
+        <input
+          value={dayLabel}
+          onChange={(e) => {
+            setDayLabel(e.target.value);
+            setLabelSaved(false);
+          }}
+          onBlur={() => !labelSaved && handleSaveLabel()}
+          placeholder={t("nameThisDay")}
+          className="flex-1 rounded-lg bg-panel border border-hairline px-3 py-2 text-sm text-chalk focus:outline-none focus:border-brasslight"
+        />
+      </div>
 
-          {loading ? (
-            <p className="text-chalkdim text-sm">Loading...</p>
-          ) : exercises.length === 0 ? (
-            <p className="text-chalkdim text-sm text-center py-6">
-              {t("noExercisesFor")} {DAYS[activeDay]}.
-            </p>
-          ) : (
-            <>
-              <p className="text-xs text-chalkdim mt-2 mb-1">{t("dragToReorder")}</p>
-              <Reorder.Group axis="y" values={exercises} onReorder={handleReorder}>
-                {exercises.map((ex) => (
-                  <ExerciseRow
-                    key={ex.id}
-                    ex={ex}
-                    onRemove={handleRemove}
-                    onToggleUnit={handleToggleUnit}
-                    onImageChange={handleImageChange}
-                    onRestChange={handleRestChange}
-                    t={t}
-                  />
-                ))}
-              </Reorder.Group>
-            </>
-          )}
+      <div className="flex-1">
+        {isRestDay ? (
+          <p className="text-chalkdim text-sm text-center py-8">{t("restDayNoExercisesNeeded")}</p>
+        ) : (
+          <>
+            <p className="text-sm font-semibold mb-1.5">{t("addYourExercisesLabel")}</p>
+            <ExercisePicker onAdd={handleAdd} />
 
-          <p className="text-xs text-chalkdim text-center mt-8">
-            Pictures by{" "}
-            <a href="https://repdb.co" target="_blank" rel="noreferrer" className="underline">
-              RepDB
-            </a>
-          </p>
-        </>
-      )}
+            {loading ? (
+              <p className="text-chalkdim text-sm">Loading...</p>
+            ) : exercises.length === 0 ? (
+              <p className="text-chalkdim text-sm text-center py-6">
+                {t("noExercisesFor")} {DAYS[activeDay]}.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-chalkdim mt-2 mb-1">{t("dragToReorder")}</p>
+                <Reorder.Group axis="y" values={exercises} onReorder={handleReorder}>
+                  {exercises.map((ex) => (
+                    <ExerciseRow
+                      key={ex.id}
+                      ex={ex}
+                      onRemove={handleRemove}
+                      onToggleUnit={handleToggleUnit}
+                      onImageChange={handleImageChange}
+                      onRestChange={handleRestChange}
+                      t={t}
+                    />
+                  ))}
+                </Reorder.Group>
+              </>
+            )}
+          </>
+        )}
+      </div>
+
+      <p className="text-xs text-chalkdim text-center mt-8 pb-2">
+        Pictures by{" "}
+        <a href="https://repdb.co" target="_blank" rel="noreferrer" className="underline">
+          RepDB
+        </a>
+      </p>
     </div>
   );
 }

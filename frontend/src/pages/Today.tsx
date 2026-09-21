@@ -132,10 +132,12 @@ export default function Today() {
             </div>
           </Link>
           <div className="min-w-0 flex-1">
-            <MarqueeText
-              text={dayLabel ? `${DAYS[dayIndex]} (${dayLabel})` : DAYS[dayIndex]}
-              className="font-display text-4xl font-semibold"
-            />
+            <Link to={`/routine?day=${dayIndex}`} className="block">
+              <MarqueeText
+                text={dayLabel ? `${DAYS[dayIndex]} (${dayLabel})` : DAYS[dayIndex]}
+                className="font-display text-4xl font-semibold"
+              />
+            </Link>
             <p className="text-chalkdim text-sm mt-1 truncate">
               {dateStr} &middot; {user?.name}
             </p>

@@ -8,8 +8,19 @@ body {
   background-color: #0F1626;
   color: #EDE7DD;
   font-family: "Work Sans", sans-serif;
+}
+
+/* Every page wrapper uses Tailwind's min-h-screen. Overriding it here makes
+   it correctly INCLUDE the safe-area insets within its own 100dvh box
+   (border-box) instead of a separate body-level padding ADDING to that
+   height - the previous approach made every page taller than the actual
+   viewport on devices with a notch/home-indicator, forcing an unwanted
+   scrollbar even when there was nothing to scroll. */
+.min-h-screen {
+  min-height: 100dvh;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-sizing: border-box;
 }
 
 /* The layout is mobile-first (narrow centered column), which reads as
