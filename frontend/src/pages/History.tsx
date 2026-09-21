@@ -252,6 +252,9 @@ export default function History() {
                           handleAddForExercise(ex.id, value, ex.preferred_unit);
                         }
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.blur();
+                      }}
                       className="w-16 rounded-md bg-panel border border-hairline pl-2 pr-7 py-1 text-sm text-center"
                     />
                     <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-chalkdim pointer-events-none">

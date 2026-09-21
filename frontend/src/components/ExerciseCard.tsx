@@ -165,6 +165,12 @@ export default function ExerciseCard({
                 inputMode="decimal"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleSave();
+                  }
+                }}
                 placeholder="0"
                 className="w-full font-display text-sm font-semibold rounded-lg bg-panel border border-hairline pl-2 pr-8 py-1 focus:outline-none focus:border-brasslight"
               />
