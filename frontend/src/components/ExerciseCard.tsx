@@ -165,6 +165,7 @@ export default function ExerciseCard({
                 inputMode="decimal"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
+                onBlur={handleSave}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
