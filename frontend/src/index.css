@@ -69,9 +69,12 @@ body {
 
 /* iOS automatically zooms in when focusing a text input smaller than 16px,
    and sometimes doesn't zoom back out - forcing a minimum size here prevents
-   that entirely, across every input in the app. */
+   that entirely, across every input in the app. !important is needed because
+   Tailwind's own text-size utility classes (text-sm, text-base, etc.) applied
+   directly on these elements otherwise win the specificity fight and silently
+   override this. */
 input,
 select,
 textarea {
-  font-size: 16px;
+  font-size: 16px !important;
 }
