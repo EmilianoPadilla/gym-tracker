@@ -9,7 +9,6 @@ import { useUnits } from "../units/UnitsContext";
 import ExercisePicker from "../components/ExercisePicker";
 import MarqueeText from "../components/MarqueeText";
 import { getExerciseImage } from "../data/exerciseLibrary";
-import { resizeImageToDataUrl } from "../lib/resizeImage";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -62,28 +61,18 @@ function ExerciseRow({
   ex,
   onRemove,
   onToggleUnit,
-  onImageChange,
   onRestChange,
   t,
 }: {
   ex: ExerciseItem;
   onRemove: (id: number) => void;
   onToggleUnit: (id: number, unit: "kg" | "lbs") => void;
-  onImageChange: (id: number, dataUrl: string) => void;
   onRestChange: (id: number, restSeconds: number) => void;
   t: (key: TranslationKey) => string;
 }) {
   const controls = useDragControls();
   const image = ex.custom_image || getExerciseImage(ex.name);
   const [pressing, setPressing] = useState(false);
-
-  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const dataUrl = await resizeImageToDataUrl(file, 200);
-    onImageChange(ex.id, dataUrl);
-    e.target.value = "";
-  }
 
   // Holding still for LONG_PRESS_MS starts the drag. Scrolling past the app
   // normally cancels it immediately (real finger movement), so a quick swipe
@@ -145,17 +134,13 @@ function ExerciseRow({
           <div className="text-chalkdim flex-shrink-0 p-1">
             <DragHandleIcon />
           </div>
-          <label
-            className="relative w-8 h-8 rounded-md bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim overflow-hidden cursor-pointer"
-            onPointerDown={(e) => e.stopPropagation()}
-          >
+          <div className="w-8 h-8 rounded-md bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim overflow-hidden">
             {image ? (
               <img src={image} alt="" className="w-full h-full object-cover" />
             ) : (
               ex.name[0]?.toUpperCase()
             )}
-            <input type="file" accept="image/*" onChange={handlePhotoSelect} className="hidden" />
-          </label>
+          </div>
           <MarqueeText text={ex.name} className="flex-1 min-w-0" />
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -250,11 +235,6 @@ export default function Routine() {
     await api.updateExerciseUnit(id, unit);
   }
 
-  async function handleImageChange(id: number, dataUrl: string) {
-    setExercises((prev) => prev.map((ex) => (ex.id === id ? { ...ex, custom_image: dataUrl } : ex)));
-    await api.updateExerciseImage(id, dataUrl);
-  }
-
   async function handleRestChange(id: number, restSeconds: number) {
     setExercises((prev) => prev.map((ex) => (ex.id === id ? { ...ex, rest_seconds: restSeconds } : ex)));
     await api.updateExerciseRest(id, restSeconds);
@@ -347,7 +327,6 @@ export default function Routine() {
                       ex={ex}
                       onRemove={handleRemove}
                       onToggleUnit={handleToggleUnit}
-                      onImageChange={handleImageChange}
                       onRestChange={handleRestChange}
                       t={t}
                     />
