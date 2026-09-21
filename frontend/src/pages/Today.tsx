@@ -117,7 +117,7 @@ export default function Today() {
   ];
 
   return (
-    <div className="min-h-screen max-w-lg mx-auto px-5 py-6">
+    <div className="min-h-screen max-w-lg mx-auto px-5 py-6 flex flex-col">
       <div className="flex justify-between items-start mb-1">
         <div className="flex items-center gap-3 min-w-0">
           <Link to="/settings" className="flex-shrink-0">
@@ -169,7 +169,7 @@ export default function Today() {
         )}
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex-1">
         {!labelsLoaded ? null : isRestDay ? (
           <div className="text-center py-16">
             <p className="font-display text-3xl mb-2">{t("restDayTitle")}</p>
@@ -215,7 +215,7 @@ export default function Today() {
 
       {!isRestDay && <FloatingTimer />}
 
-      <p className="text-center text-[10px] text-chalkdim mt-10 pb-2">{t("developedBy")}</p>
+      <p className="text-center text-[10px] text-chalkdim mt-4 pb-2">{t("developedBy")}</p>
     </div>
   );
 }

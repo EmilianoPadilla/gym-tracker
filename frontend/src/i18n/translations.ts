@@ -66,7 +66,7 @@ export const translations = {
     previousDay: "Previous day",
     nextDay: "Next day",
     timerLabel: "Timer",
-    customTimer: "Custom timer",
+    customTimer: "custom timer",
     developedBy: "Developed by Emiliano Padilla",
     welcomeNoRoutineTitle: "Welcome!",
     welcomeNoRoutineMessage: "You don't have a routine yet - add your routine here.",

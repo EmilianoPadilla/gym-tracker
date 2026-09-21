@@ -30,9 +30,16 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center px-6">
       <div className="w-full max-w-sm">
+        <div className="mb-8">
+          <h1 className="font-display text-4xl font-semibold mb-2">Gym Tracker</h1>
+          <p className="text-chalkdim text-sm">
+            Gym Tracker is a personal workout tracker: build a weekly routine, log the weight you
+            lift each session, and see your progress over time.
+          </p>
+        </div>
+
         <form onSubmit={handleSubmit}>
-          <h1 className="font-display text-4xl font-semibold mb-1">{t("welcomeBack")}</h1>
-          <p className="text-chalkdim text-sm mb-8">{t("welcomeBackSubtitle")}</p>
+          <p className="text-chalkdim text-sm mb-6">{t("welcomeBack")}</p>
 
           <label className="block text-sm text-chalkdim mb-1">{t("email")}</label>
           <input

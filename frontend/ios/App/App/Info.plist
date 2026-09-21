@@ -22,16 +22,14 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<!-- Google Sign-In: replace YOUR_IOS_CLIENT_ID below (both places) with the
-	     real iOS OAuth Client ID from Google Cloud Console once created. -->
 	<key>GIDClientID</key>
-	<string>YOUR_IOS_CLIENT_ID.apps.googleusercontent.com</string>
+	<string>837287090008-2dabsh7a8f4cc59ueau3hr9k4j07vbra.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.YOUR_IOS_CLIENT_ID</string>
+				<string>com.googleusercontent.apps.837287090008-2dabsh7a8f4cc59ueau3hr9k4j07vbra</string>
 			</array>
 		</dict>
 	</array>
