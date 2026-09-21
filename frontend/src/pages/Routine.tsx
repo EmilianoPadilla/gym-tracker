@@ -54,9 +54,6 @@ function DragHandleIcon() {
   );
 }
 
-const LONG_PRESS_MS = 400;
-const MOVE_CANCEL_THRESHOLD = 10; // px of movement before the hold is treated as a scroll, not a drag
-
 function ExerciseRow({
   ex,
   onRemove,
@@ -74,43 +71,14 @@ function ExerciseRow({
   const image = ex.custom_image || getExerciseImage(ex.name);
   const [pressing, setPressing] = useState(false);
 
-  // Holding still for LONG_PRESS_MS starts the drag. Scrolling past the app
-  // normally cancels it immediately (real finger movement), so a quick swipe
-  // through the list to scroll no longer gets mistaken for a reorder.
-  function handlePointerDown(e: React.PointerEvent) {
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const nativeEvent = e.nativeEvent;
-    let cancelled = false;
-
-    function cleanup() {
-      cancelled = true;
-      window.removeEventListener("pointermove", handleMove);
-      window.removeEventListener("pointerup", handleUp);
-      window.removeEventListener("pointercancel", handleUp);
-      setPressing(false);
-    }
-
-    function handleMove(ev: PointerEvent) {
-      if (Math.abs(ev.clientX - startX) > MOVE_CANCEL_THRESHOLD || Math.abs(ev.clientY - startY) > MOVE_CANCEL_THRESHOLD) {
-        cleanup();
-      }
-    }
-
-    function handleUp() {
-      cleanup();
-    }
-
-    window.addEventListener("pointermove", handleMove);
-    window.addEventListener("pointerup", handleUp);
-    window.addEventListener("pointercancel", handleUp);
+  // Dragging starts immediately on the dedicated handle icon only - touching
+  // it is already a clear, deliberate intent, unlike touching anywhere in the
+  // row (image, name), which needs to keep scrolling normally. touch-action
+  // is disabled on just this small icon, so the browser never intercepts it
+  // as a scroll gesture, while every other part of the row scrolls freely.
+  function handleHandlePointerDown(e: React.PointerEvent) {
     setPressing(true);
-
-    setTimeout(() => {
-      if (cancelled) return;
-      cleanup();
-      controls.start(nativeEvent);
-    }, LONG_PRESS_MS);
+    controls.start(e);
   }
 
   return (
@@ -118,20 +86,19 @@ function ExerciseRow({
       value={ex}
       dragListener={false}
       dragControls={controls}
+      onDragEnd={() => setPressing(false)}
       className={`py-3 border-t border-hairline first:border-t-0 bg-charcoal select-none transition-colors ${
         pressing ? "bg-panelraised" : ""
       }`}
     >
       <div className="flex items-center justify-between">
-        {/* Hold anywhere in this area (icon, image, name) for a moment to start
-            dragging - only the unit toggle and remove button, outside this
-            container, are excluded. Normal scrolling still works everywhere else. */}
-        <div
-          onPointerDown={handlePointerDown}
-          style={{ touchAction: "pan-y" }}
-          className="flex items-center gap-3 flex-1 min-w-0 cursor-grab active:cursor-grabbing"
-        >
-          <div className="text-chalkdim flex-shrink-0 p-1">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div
+            onPointerDown={handleHandlePointerDown}
+            onPointerUp={() => setPressing(false)}
+            style={{ touchAction: "none" }}
+            className="text-chalkdim flex-shrink-0 p-1 cursor-grab active:cursor-grabbing"
+          >
             <DragHandleIcon />
           </div>
           <div className="w-8 h-8 rounded-md bg-panel border border-hairline flex-shrink-0 flex items-center justify-center text-xs text-chalkdim overflow-hidden">

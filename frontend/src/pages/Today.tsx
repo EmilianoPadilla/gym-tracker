@@ -171,7 +171,7 @@ export default function Today() {
         )}
       </div>
 
-      <div className="mt-4 flex-1">
+      <div className="mt-4 flex-1 pb-28">
         {!labelsLoaded ? null : isRestDay ? (
           <div className="text-center py-16">
             <p className="font-display text-3xl mb-2">{t("restDayTitle")}</p>
