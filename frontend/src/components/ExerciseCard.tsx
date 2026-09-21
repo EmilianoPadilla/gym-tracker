@@ -189,7 +189,7 @@ export default function ExerciseCard({
             </button>
             <button
               onClick={timerRunning ? cancelTimer : startTimer}
-              className="rounded-lg bg-amber-800 text-white font-semibold text-sm py-1 whitespace-nowrap"
+              className="rounded-lg bg-[#FFA500] text-charcoal font-semibold text-sm py-1 whitespace-nowrap"
             >
               {timerRunning ? t("cancel") : t("timerLabel")}
             </button>

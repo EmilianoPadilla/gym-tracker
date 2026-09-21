@@ -66,3 +66,12 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* iOS automatically zooms in when focusing a text input smaller than 16px,
+   and sometimes doesn't zoom back out - forcing a minimum size here prevents
+   that entirely, across every input in the app. */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
