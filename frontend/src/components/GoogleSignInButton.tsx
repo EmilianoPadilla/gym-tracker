@@ -36,6 +36,14 @@ function GoogleLogo() {
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const isNative = Capacitor.isNativePlatform();
 
+// Started once, immediately, so every sign-in attempt can await the SAME
+// promise - this guarantees initialize() has truly finished before signIn()
+// is ever called, no matter how quickly the user taps the button. Calling
+// signIn() before initialize() resolves was producing malformed requests
+// that Google's servers rejected as invalid.
+const nativeInitPromise: Promise<void> | null =
+  isNative && GOOGLE_CLIENT_ID ? GoogleSignIn.initialize({ clientId: GOOGLE_CLIENT_ID }) : null;
+
 export default function GoogleSignInButton() {
   const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -86,16 +94,10 @@ export default function GoogleSignInButton() {
   // Native app path: uses the real native Google Sign-In SDK (Credential
   // Manager on Android, Google Sign-In SDK on iOS) instead of JavaScript
   // embedded in the WebView, since Google disallows the latter.
-  useEffect(() => {
-    if (!isNative || !GOOGLE_CLIENT_ID) return;
-    GoogleSignIn.initialize({ clientId: GOOGLE_CLIENT_ID }).catch(() => {
-      // Initialization failing here surfaces as a sign-in error when tapped
-    });
-  }, []);
-
   async function handleNativeSignIn() {
     setStatus("loading");
     try {
+      if (nativeInitPromise) await nativeInitPromise; // wait for initialize() to truly finish first
       const result = await GoogleSignIn.signIn();
       await loginWithGoogle(result.idToken);
       navigate("/");
