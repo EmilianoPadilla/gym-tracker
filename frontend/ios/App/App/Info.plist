@@ -23,13 +23,13 @@
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>GIDClientID</key>
-	<string>837287090008-2dabsh7a8f4cc59ueau3hr9k4j07vbra.apps.googleusercontent.com</string>
+	<string>837287090008-8r2ocnpdl9pqntcad5j5cjaiiibjin8i.apps.googleusercontent.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.837287090008-2dabsh7a8f4cc59ueau3hr9k4j07vbra</string>
+				<string>com.googleusercontent.apps.837287090008-8r2ocnpdl9pqntcad5j5cjaiiibjin8i</string>
 			</array>
 		</dict>
 	</array>
