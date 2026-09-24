@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Capacitor } from "@capacitor/core";
-import { Filesystem, Directory } from "@capacitor/filesystem";
-import { Share } from "@capacitor/share";
+import { Media } from "@capacitor-community/media";
 import { useLanguage } from "../i18n/LanguageContext";
 import DurationPicker from "./DurationPicker";
 
@@ -161,17 +160,9 @@ export default function SessionRecapModal({
     setSaveStatus("saving");
     try {
       if (Capacitor.isNativePlatform()) {
-        // <a download> links are unreliable inside a native WebView - write
-        // the file and hand it to the native share sheet instead, which lets
-        // the person save it straight to Photos or send it anywhere else.
-        const base64 = imageUrl.split(",")[1];
-        const fileName = `gym-tracker-session-${Date.now()}.png`;
-        const result = await Filesystem.writeFile({
-          path: fileName,
-          data: base64,
-          directory: Directory.Cache,
-        });
-        await Share.share({ url: result.uri });
+        // Saves straight to the Photos/Gallery app - no share sheet, no
+        // extra tap needed from the person using it.
+        await Media.savePhoto({ path: imageUrl });
         setSaveStatus("done");
       } else {
         const link = document.createElement("a");

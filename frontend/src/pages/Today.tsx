@@ -344,10 +344,11 @@ export default function Today() {
             <div className="flex justify-center mt-4">
               <button
                 onClick={() => setShowRecapModal(true)}
-                className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg"
+                className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
                 style={{
-                  background:
-                    "linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 45%), linear-gradient(180deg, #9b6bd9 0%, #6b3fa0 100%)",
+                  backgroundColor: "#7C3AED",
+                  border: "1.5px solid #C4B5FD",
+                  boxShadow: "inset 0 0 16px rgba(196, 181, 253, 0.55), 0 0 8px rgba(124, 58, 237, 0.4)",
                 }}
               >
                 {t("generateSessionImage")}
