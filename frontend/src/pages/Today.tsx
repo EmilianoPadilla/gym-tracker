@@ -267,7 +267,7 @@ export default function Today() {
         )}
       </div>
 
-      {isActuallyToday && (
+      {isActuallyToday && !isRestDay && (
         <div className="flex flex-col items-center gap-2 mb-2">
           <p className="text-sm text-chalkdim">
             {t("sessionTimerLabel")}: {liveTimeLabel}
