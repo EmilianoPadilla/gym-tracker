@@ -32,7 +32,67 @@ export default function Today() {
   const [labelsLoaded, setLabelsLoaded] = useState(false);
   const [hasAnyRoutine, setHasAnyRoutine] = useState<boolean | null>(null);
   const [showRecapModal, setShowRecapModal] = useState(false);
+  const [sessionRunning, setSessionRunning] = useState(false);
+  const [sessionTotalMinutes, setSessionTotalMinutes] = useState<number | null>(null);
+  const [liveElapsedLabel, setLiveElapsedLabel] = useState("");
   const inputRefsMap = useRef<Record<number, HTMLInputElement | null>>({});
+
+  const todayISO = toISODate(new Date());
+
+  // The session timer uses a stored real-world start TIMESTAMP rather than a
+  // running JS counter, so the actual elapsed time is always correct no
+  // matter how long the phone was locked or the app was backgrounded - we
+  // simply compare "now" to that stored timestamp whenever it matters,
+  // instead of relying on a setInterval that pauses in the background.
+  useEffect(() => {
+    const storedDate = localStorage.getItem("gymtracker_session_date");
+    if (storedDate !== todayISO) {
+      // A new day - clear out anything left over from a previous session.
+      localStorage.removeItem("gymtracker_session_date");
+      localStorage.removeItem("gymtracker_session_startedAt");
+      localStorage.removeItem("gymtracker_session_totalMinutes");
+      return;
+    }
+    const startedAt = localStorage.getItem("gymtracker_session_startedAt");
+    const totalMinutes = localStorage.getItem("gymtracker_session_totalMinutes");
+    if (startedAt) setSessionRunning(true);
+    if (totalMinutes) setSessionTotalMinutes(parseInt(totalMinutes));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Purely cosmetic live ticker while the session is running and the app is
+  // in the foreground - has no bearing on the actual recorded duration.
+  useEffect(() => {
+    if (!sessionRunning) return;
+    function updateLabel() {
+      const startedAt = parseInt(localStorage.getItem("gymtracker_session_startedAt") || "0");
+      if (!startedAt) return;
+      const elapsedMin = Math.floor((Date.now() - startedAt) / 60000);
+      const h = Math.floor(elapsedMin / 60);
+      const m = elapsedMin % 60;
+      setLiveElapsedLabel(h > 0 ? `${h}h ${m}m` : `${m}m`);
+    }
+    updateLabel();
+    const interval = setInterval(updateLabel, 15000);
+    return () => clearInterval(interval);
+  }, [sessionRunning]);
+
+  function startSessionTimer() {
+    localStorage.setItem("gymtracker_session_date", todayISO);
+    localStorage.setItem("gymtracker_session_startedAt", Date.now().toString());
+    localStorage.removeItem("gymtracker_session_totalMinutes");
+    setSessionTotalMinutes(null);
+    setSessionRunning(true);
+  }
+
+  function endSessionTimer() {
+    const startedAt = parseInt(localStorage.getItem("gymtracker_session_startedAt") || "0");
+    const totalMinutes = startedAt ? Math.max(1, Math.round((Date.now() - startedAt) / 60000)) : 0;
+    localStorage.setItem("gymtracker_session_totalMinutes", totalMinutes.toString());
+    localStorage.removeItem("gymtracker_session_startedAt");
+    setSessionTotalMinutes(totalMinutes);
+    setSessionRunning(false);
+  }
 
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
   const dayIndex = dayOfWeekOf(viewDate);
@@ -173,6 +233,17 @@ export default function Today() {
         )}
       </div>
 
+      {isActuallyToday && (
+        <button
+          onClick={sessionRunning ? endSessionTimer : startSessionTimer}
+          className={`w-full mb-2 rounded-lg font-semibold py-2.5 text-sm ${
+            sessionRunning ? "bg-red-800 text-white" : "bg-brass text-chalk"
+          }`}
+        >
+          {sessionRunning ? `${t("endTimer")} (${liveElapsedLabel})` : t("startSessionTimer")}
+        </button>
+      )}
+
       <div className="mt-4 flex-1 pb-28">
         {!labelsLoaded ? null : isRestDay ? (
           <div className="text-center py-16">
@@ -215,18 +286,27 @@ export default function Today() {
                 inputRef={(el) => (inputRefsMap.current[ex.id] = el)}
               />
             ))}
-            <button
-              onClick={() => setShowRecapModal(true)}
-              className="w-full mt-4 rounded-lg border border-brasslight text-brasslight font-semibold py-2.5 text-sm"
-            >
-              {t("generateSessionImage")}
-            </button>
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => setShowRecapModal(true)}
+                className="rounded-full px-5 py-2 text-sm font-semibold"
+                style={{ backgroundColor: "#C0C0C0", color: "#000000" }}
+              >
+                {t("generateSessionImage")}
+              </button>
+            </div>
           </>
         )}
       </div>
 
       {!isRestDay && <FloatingTimer />}
-      {showRecapModal && <SessionRecapModal onClose={() => setShowRecapModal(false)} />}
+      {showRecapModal && (
+        <SessionRecapModal
+          dayName={dayLabel || DAYS[dayIndex]}
+          sessionMinutes={sessionTotalMinutes ?? 0}
+          onClose={() => setShowRecapModal(false)}
+        />
+      )}
 
       <p className="text-center text-[10px] text-chalkdim mt-4 pb-2">{t("developedBy")}</p>
     </div>

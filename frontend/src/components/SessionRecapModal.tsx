@@ -1,25 +1,24 @@
 import { useState } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 import { useLanguage } from "../i18n/LanguageContext";
 import DurationPicker from "./DurationPicker";
 
-const DAY_TYPES = [
-  "Push day",
-  "Pull day",
-  "Legs - Quad focus",
-  "Upper body",
-  "Lower body",
-  "Legs - Hamstring focus",
-  "Chest",
-  "Back",
-  "Arms",
-];
+type Step = "cardio" | "cardioDuration" | "preview";
 
-type Step = "dayType" | "duration" | "cardio" | "cardioDuration" | "preview";
+// Total session time: "2h 20m", or just "45m" if under an hour.
+function formatSessionTime(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
 
-function formatDuration(hours: number, minutes: number): string {
-  if (hours === 0) return `${minutes}m`;
-  if (minutes === 0) return `${hours}h`;
-  return `${hours}h ${minutes}m`;
+// Cardio is always shown as plain total minutes, e.g. "20m" - no hour split.
+function formatCardioTime(hours: number, minutes: number): string {
+  return `${hours * 60 + minutes}m`;
 }
 
 async function waitForFont(): Promise<void> {
@@ -70,14 +69,14 @@ function wrapCenteredText(
   }
 }
 
-function drawRecapImage(dayType: string, totalTime: string, cardioTime: string | null): string {
+function drawRecapImage(dayName: string, totalTime: string, cardioTime: string | null): string {
   const canvas = document.createElement("canvas");
   const W = 1080;
   const H = 1350;
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext("2d")!;
-  // No background fill at all - canvas starts fully transparent, so this can
+  // No background fill at all - canvas stays fully transparent, so this can
   // be layered on top of a regular photo afterward, like Strava's overlays.
 
   ctx.textAlign = "center";
@@ -91,7 +90,7 @@ function drawRecapImage(dayType: string, totalTime: string, cardioTime: string |
 
   ctx.fillStyle = "#FFFFFF";
   ctx.font = "700 100px Oswald, sans-serif";
-  wrapCenteredText(ctx, dayType.toUpperCase(), W / 2, 340, W - 160, 108);
+  wrapCenteredText(ctx, dayName.toUpperCase(), W / 2, 340, W - 160, 108);
 
   ctx.strokeStyle = "rgba(237, 231, 221, 0.6)";
   ctx.lineWidth = 3;
@@ -128,65 +127,66 @@ function drawRecapImage(dayType: string, totalTime: string, cardioTime: string |
   return canvas.toDataURL("image/png");
 }
 
-export default function SessionRecapModal({ onClose }: { onClose: () => void }) {
+export default function SessionRecapModal({
+  dayName,
+  sessionMinutes,
+  onClose,
+}: {
+  dayName: string;
+  sessionMinutes: number;
+  onClose: () => void;
+}) {
   const { t } = useLanguage();
-  const [step, setStep] = useState<Step>("dayType");
-  const [dayType, setDayType] = useState<string | null>(null);
-  const [hours, setHours] = useState(1);
-  const [minutes, setMinutes] = useState(0);
+  const [step, setStep] = useState<Step>("cardio");
   const [cardioHours, setCardioHours] = useState(0);
   const [cardioMinutes, setCardioMinutes] = useState(20);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
 
   async function finishAndGenerate(cardioTime: string | null) {
     setGenerating(true);
     await waitForFont();
-    const url = drawRecapImage(dayType!, formatDuration(hours, minutes), cardioTime);
+    const url = drawRecapImage(dayName, formatSessionTime(sessionMinutes), cardioTime);
     setImageUrl(url);
     setGenerating(false);
     setStep("preview");
   }
 
+  async function handleSaveImage() {
+    if (!imageUrl) return;
+    setSaveStatus("saving");
+    try {
+      if (Capacitor.isNativePlatform()) {
+        // <a download> links are unreliable inside a native WebView - write
+        // the file and hand it to the native share sheet instead, which lets
+        // the person save it straight to Photos or send it anywhere else.
+        const base64 = imageUrl.split(",")[1];
+        const fileName = `gym-tracker-session-${Date.now()}.png`;
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: base64,
+          directory: Directory.Cache,
+        });
+        await Share.share({ url: result.uri });
+        setSaveStatus("done");
+      } else {
+        const link = document.createElement("a");
+        link.href = imageUrl;
+        link.download = "gym-tracker-session.png";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setSaveStatus("done");
+      }
+    } catch {
+      setSaveStatus("error");
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-5">
       <div className="bg-panel border border-hairline rounded-xl p-5 max-w-sm w-full max-h-[90vh] overflow-y-auto">
-        {step === "dayType" && (
-          <>
-            <p className="text-chalk font-semibold mb-4">{t("whatDidYouTrainToday")}</p>
-            <div className="flex flex-col gap-2">
-              {DAY_TYPES.map((d) => (
-                <button
-                  key={d}
-                  onClick={() => {
-                    setDayType(d);
-                    setStep("duration");
-                  }}
-                  className="text-left rounded-lg border border-hairline px-3 py-2.5 text-sm text-chalk hover:border-brasslight"
-                >
-                  {d}
-                </button>
-              ))}
-            </div>
-            <button onClick={onClose} className="mt-4 text-chalkdim text-sm w-full text-center">
-              {t("cancel")}
-            </button>
-          </>
-        )}
-
-        {step === "duration" && (
-          <>
-            <p className="text-chalk font-semibold mb-4">{t("howLongWasYourSession")}</p>
-            <DurationPicker hours={hours} minutes={minutes} onChangeHours={setHours} onChangeMinutes={setMinutes} />
-            <button
-              onClick={() => setStep("cardio")}
-              className="mt-5 w-full rounded-lg bg-brass text-chalk font-semibold py-2.5 text-sm"
-            >
-              {t("continueLabel")}
-            </button>
-          </>
-        )}
-
         {step === "cardio" && (
           <>
             <p className="text-chalk font-semibold mb-4">{t("didYouDoCardio")}</p>
@@ -204,6 +204,9 @@ export default function SessionRecapModal({ onClose }: { onClose: () => void }) 
                 {t("yes")}
               </button>
             </div>
+            <button onClick={onClose} className="mt-4 text-chalkdim text-sm w-full text-center">
+              {t("cancel")}
+            </button>
           </>
         )}
 
@@ -217,7 +220,7 @@ export default function SessionRecapModal({ onClose }: { onClose: () => void }) 
               onChangeMinutes={setCardioMinutes}
             />
             <button
-              onClick={() => finishAndGenerate(formatDuration(cardioHours, cardioMinutes))}
+              onClick={() => finishAndGenerate(formatCardioTime(cardioHours, cardioMinutes))}
               className="mt-5 w-full rounded-lg bg-brass text-chalk font-semibold py-2.5 text-sm"
             >
               {generating ? "..." : t("generateImage")}
@@ -226,7 +229,7 @@ export default function SessionRecapModal({ onClose }: { onClose: () => void }) 
         )}
 
         {step === "preview" && imageUrl && (
-          <>
+          <div className="-m-5 p-5 bg-black rounded-xl">
             <img src={imageUrl} alt="Session recap" className="w-full rounded-lg mb-4" />
             <div className="flex gap-2">
               <button
@@ -235,15 +238,18 @@ export default function SessionRecapModal({ onClose }: { onClose: () => void }) 
               >
                 {t("close")}
               </button>
-              <a
-                href={imageUrl}
-                download="gym-tracker-session.png"
-                className="flex-1 rounded-lg bg-brass text-chalk py-2.5 text-sm font-semibold text-center"
+              <button
+                onClick={handleSaveImage}
+                disabled={saveStatus === "saving"}
+                className="flex-1 rounded-lg bg-brass text-chalk py-2.5 text-sm font-semibold disabled:opacity-60"
               >
-                {t("download")}
-              </a>
+                {saveStatus === "saving" ? "..." : t("download")}
+              </button>
             </div>
-          </>
+            {saveStatus === "error" && (
+              <p className="text-red-400 text-xs text-center mt-2">Something went wrong saving the image.</p>
+            )}
+          </div>
         )}
       </div>
     </div>
