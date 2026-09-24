@@ -132,7 +132,7 @@ export default function FloatingTimer() {
           <span className="font-display font-semibold text-xs">{formatClock(displaySeconds)}</span>
         </button>
       </div>
-      <span className="text-xs text-chalkdim tracking-wide bg-panel border border-hairline rounded-full px-3 py-1 mt-1.5 shadow-lg">
+      <span className="text-xs text-chalkdim tracking-wide bg-panel border border-hairline rounded-full px-3 py-1 shadow-lg">
         {t("customTimer")}
       </span>
     </div>

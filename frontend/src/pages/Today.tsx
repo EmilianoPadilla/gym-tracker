@@ -44,6 +44,7 @@ export default function Today() {
   const [sessionTotalMinutes, setSessionTotalMinutes] = useState<number | null>(null);
   const [liveElapsedLabel, setLiveElapsedLabel] = useState("");
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
   const inputRefsMap = useRef<Record<number, HTMLInputElement | null>>({});
 
   const todayISO = toISODate(new Date());
@@ -252,7 +253,7 @@ export default function Today() {
           <button
             onClick={() => {
               if (sessionRunning) {
-                endSessionTimer();
+                setShowEndConfirm(true);
               } else if (sessionTotalMinutes !== null) {
                 setShowRestartConfirm(true);
               } else {
@@ -271,6 +272,31 @@ export default function Today() {
                 ? `${t("sessionLabel")}: ${formatSavedSession(sessionTotalMinutes)}`
                 : t("startSessionTimer")}
           </button>
+        </div>
+      )}
+
+      {showEndConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
+          <div className="bg-panel border border-hairline rounded-xl p-5 max-w-xs w-full">
+            <p className="text-chalk text-sm mb-4">{t("endTimerQuestion")}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowEndConfirm(false)}
+                className="flex-1 rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
+              >
+                {t("no")}
+              </button>
+              <button
+                onClick={() => {
+                  setShowEndConfirm(false);
+                  endSessionTimer();
+                }}
+                className="flex-1 rounded-lg bg-brass text-chalk py-2 text-sm font-semibold"
+              >
+                {t("yes")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -344,14 +370,14 @@ export default function Today() {
             <div className="flex justify-center mt-4">
               <button
                 onClick={() => setShowRecapModal(true)}
-                className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
-                style={{
-                  backgroundColor: "#7C3AED",
-                  border: "1.5px solid #C4B5FD",
-                  boxShadow: "inset 0 0 16px rgba(196, 181, 253, 0.55), 0 0 8px rgba(124, 58, 237, 0.4)",
-                }}
+                aria-label={t("generateSessionImage")}
+                className="w-11 h-11 rounded-xl flex items-center justify-center text-chalk"
               >
-                {t("generateSessionImage")}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 16V4" />
+                  <path d="M8 8l4-4 4 4" />
+                  <path d="M4 16v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+                </svg>
               </button>
             </div>
           </>

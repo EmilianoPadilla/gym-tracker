@@ -94,11 +94,11 @@ function drawRecapImage(dayName: string, totalTime: string, cardioTime: string |
   ctx.strokeStyle = "rgba(237, 231, 221, 0.6)";
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(140, 560);
-  ctx.lineTo(W - 140, 560);
+  ctx.moveTo(140, 490);
+  ctx.lineTo(W - 140, 490);
   ctx.stroke();
 
-  let statY = 680;
+  let statY = 610;
   drawStat(ctx, W / 2, statY, "TOTAL TIME", totalTime);
   if (cardioTime) {
     statY += 220;
@@ -270,12 +270,21 @@ export default function SessionRecapModal({
         )}
 
         {step === "preview" && imageUrl && (
-          <div className="-m-5 p-5 bg-black rounded-xl">
+          <div
+            className="-m-5 p-5 rounded-xl"
+            style={{
+              backgroundColor: "#8c8c8c",
+              backgroundImage:
+                "linear-gradient(45deg, #bfbfbf 25%, transparent 25%), linear-gradient(-45deg, #bfbfbf 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #bfbfbf 75%), linear-gradient(-45deg, transparent 75%, #bfbfbf 75%)",
+              backgroundSize: "20px 20px",
+              backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0px",
+            }}
+          >
             <img src={imageUrl} alt="Session recap" className="w-full rounded-lg mb-4" />
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="flex-1 rounded-lg border border-hairline text-chalkdim py-2.5 text-sm font-semibold"
+                className="flex-1 rounded-lg bg-panel border border-hairline text-chalk py-2.5 text-sm font-semibold"
               >
                 {t("close")}
               </button>
