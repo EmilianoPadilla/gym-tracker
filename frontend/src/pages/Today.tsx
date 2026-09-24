@@ -21,16 +21,9 @@ function dayOfWeekOf(d: Date): number {
   return jsDay === 0 ? 6 : jsDay - 1; // 0=Monday ... matches backend's day_of_week
 }
 
-function formatSavedSession(totalMinutes: number): string {
-  const h = Math.floor(totalMinutes / 60);
-  const m = totalMinutes % 60;
-  if (h === 0) return `${m}m`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}m`;
-}
-
 export default function Today() {
   const { user, logout } = useAuth();
+  const sessionKey = (name: string) => `gymtracker_session_${user?.id ?? "anon"}_${name}`;
   const { language, t } = useLanguage();
   const [viewDate, setViewDate] = useState(() => new Date());
   const [exercises, setExercises] = useState<any[] | null>(null);
@@ -40,73 +33,99 @@ export default function Today() {
   const [labelsLoaded, setLabelsLoaded] = useState(false);
   const [hasAnyRoutine, setHasAnyRoutine] = useState<boolean | null>(null);
   const [showRecapModal, setShowRecapModal] = useState(false);
-  const [sessionRunning, setSessionRunning] = useState(false);
-  const [sessionTotalMinutes, setSessionTotalMinutes] = useState<number | null>(null);
-  const [liveElapsedLabel, setLiveElapsedLabel] = useState("");
-  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
-  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false);
+  const [sessionState, setSessionState] = useState<"idle" | "running" | "paused" | "finished">("idle");
+  const [sessionMinutes, setSessionMinutes] = useState(0);
+  const [liveTimeLabel, setLiveTimeLabel] = useState("0h 0m 0s");
   const inputRefsMap = useRef<Record<number, HTMLInputElement | null>>({});
+
+  function formatHMS(totalMs: number): string {
+    const totalSeconds = Math.floor(totalMs / 1000);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h}h ${m}m ${s}s`;
+  }
 
   const todayISO = toISODate(new Date());
 
-  // The session timer uses a stored real-world start TIMESTAMP rather than a
-  // running JS counter, so the actual elapsed time is always correct no
-  // matter how long the phone was locked or the app was backgrounded - we
-  // simply compare "now" to that stored timestamp whenever it matters,
-  // instead of relying on a setInterval that pauses in the background.
+  // The session timer accumulates time across pause/resume cycles. Each
+  // running segment is tracked by a real-world start TIMESTAMP (not a JS
+  // counter), so elapsed time stays correct no matter how long the phone was
+  // locked or backgrounded - completed segments are folded into an
+  // accumulated total in localStorage, and resuming just starts a new
+  // segment on top of that total.
   useEffect(() => {
-    const storedDate = localStorage.getItem("gymtracker_session_date");
+    const storedDate = localStorage.getItem(sessionKey("date"));
     if (storedDate !== todayISO) {
-      // A new day - clear out anything left over from a previous session.
-      localStorage.removeItem("gymtracker_session_date");
-      localStorage.removeItem("gymtracker_session_startedAt");
-      localStorage.removeItem("gymtracker_session_totalMinutes");
+      localStorage.removeItem(sessionKey("date"));
+      localStorage.removeItem(sessionKey("startedAt"));
+      localStorage.removeItem(sessionKey("accumulatedMs"));
+      localStorage.removeItem(sessionKey("finished"));
+      setLiveTimeLabel("0h 0m 0s");
+      setSessionMinutes(0);
+      setSessionState("idle");
       return;
     }
-    const startedAt = localStorage.getItem("gymtracker_session_startedAt");
-    const totalMinutes = localStorage.getItem("gymtracker_session_totalMinutes");
-    if (startedAt) setSessionRunning(true);
-    if (totalMinutes) setSessionTotalMinutes(parseInt(totalMinutes));
+    const startedAt = localStorage.getItem(sessionKey("startedAt"));
+    const accumulatedMs = parseInt(localStorage.getItem(sessionKey("accumulatedMs")) || "0");
+    const finished = localStorage.getItem(sessionKey("finished")) === "true";
+    setSessionMinutes(Math.floor(accumulatedMs / 60000));
+    setLiveTimeLabel(formatHMS(accumulatedMs));
+    if (finished) setSessionState("finished");
+    else if (startedAt) setSessionState("running");
+    else if (accumulatedMs > 0) setSessionState("paused");
+    else setSessionState("idle");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user?.id]);
 
-  // Purely cosmetic live ticker while the session is running and the app is
-  // in the foreground - has no bearing on the actual recorded duration.
+  // Live ticker while running, down to the second - has no bearing on the
+  // actual recorded duration, which is always recomputed from the stored
+  // timestamp whenever it matters (pausing, finalizing, generating the PNG).
   useEffect(() => {
-    if (!sessionRunning) return;
-    function updateLabel() {
-      const startedAt = parseInt(localStorage.getItem("gymtracker_session_startedAt") || "0");
+    if (sessionState !== "running") return;
+    function updateLiveDisplay() {
+      const startedAt = parseInt(localStorage.getItem(sessionKey("startedAt")) || "0");
+      const accumulatedMs = parseInt(localStorage.getItem(sessionKey("accumulatedMs")) || "0");
       if (!startedAt) return;
-      const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
-      const h = Math.floor(elapsedSec / 3600);
-      const m = Math.floor((elapsedSec % 3600) / 60);
-      const s = elapsedSec % 60;
-      setLiveElapsedLabel(
-        h > 0
-          ? `${h}h ${m.toString().padStart(2, "0")}m ${s.toString().padStart(2, "0")}s`
-          : `${m}m ${s.toString().padStart(2, "0")}s`
-      );
+      const totalMs = accumulatedMs + (Date.now() - startedAt);
+      setLiveTimeLabel(formatHMS(totalMs));
+      setSessionMinutes(Math.floor(totalMs / 60000));
     }
-    updateLabel();
-    const interval = setInterval(updateLabel, 1000);
+    updateLiveDisplay();
+    const interval = setInterval(updateLiveDisplay, 1000);
     return () => clearInterval(interval);
-  }, [sessionRunning]);
+  }, [sessionState]);
 
-  function startSessionTimer() {
-    localStorage.setItem("gymtracker_session_date", todayISO);
-    localStorage.setItem("gymtracker_session_startedAt", Date.now().toString());
-    localStorage.removeItem("gymtracker_session_totalMinutes");
-    setSessionTotalMinutes(null);
-    setSessionRunning(true);
+  function handleStartSession() {
+    localStorage.setItem(sessionKey("date"), todayISO);
+    localStorage.setItem(sessionKey("accumulatedMs"), "0");
+    localStorage.setItem(sessionKey("startedAt"), Date.now().toString());
+    localStorage.removeItem(sessionKey("finished"));
+    setSessionMinutes(0);
+    setLiveTimeLabel("0h 0m 0s");
+    setSessionState("running");
   }
 
-  function endSessionTimer() {
-    const startedAt = parseInt(localStorage.getItem("gymtracker_session_startedAt") || "0");
-    const totalMinutes = startedAt ? Math.max(1, Math.round((Date.now() - startedAt) / 60000)) : 0;
-    localStorage.setItem("gymtracker_session_totalMinutes", totalMinutes.toString());
-    localStorage.removeItem("gymtracker_session_startedAt");
-    setSessionTotalMinutes(totalMinutes);
-    setSessionRunning(false);
+  function handlePauseSession() {
+    const startedAt = parseInt(localStorage.getItem(sessionKey("startedAt")) || "0");
+    const prevAccumulated = parseInt(localStorage.getItem(sessionKey("accumulatedMs")) || "0");
+    const newAccumulated = prevAccumulated + (startedAt ? Date.now() - startedAt : 0);
+    localStorage.setItem(sessionKey("accumulatedMs"), newAccumulated.toString());
+    localStorage.removeItem(sessionKey("startedAt"));
+    setSessionMinutes(Math.floor(newAccumulated / 60000));
+    setLiveTimeLabel(formatHMS(newAccumulated));
+    setSessionState("paused");
+  }
+
+  function handleResumeSession() {
+    localStorage.setItem(sessionKey("startedAt"), Date.now().toString());
+    setSessionState("running");
+  }
+
+  function handleFinalizeSession() {
+    localStorage.setItem(sessionKey("finished"), "true");
+    setSessionState("finished");
   }
 
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
@@ -249,88 +268,61 @@ export default function Today() {
       </div>
 
       {isActuallyToday && (
-        <div className="flex justify-center mb-2">
-          <button
-            onClick={() => {
-              if (sessionRunning) {
-                setShowEndConfirm(true);
-              } else if (sessionTotalMinutes !== null) {
-                setShowRestartConfirm(true);
-              } else {
-                startSessionTimer();
-              }
-            }}
-            className="rounded-lg font-semibold py-2 px-5 text-sm text-white shadow-md"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(120, 116, 182, 0.65) 0%, rgba(221, 221, 228, 0) 45%), linear-gradient(180deg, #2320d8 0%, #2232c0 100%)",
-            }}
-          >
-            {sessionRunning
-              ? `${t("endTimer")} (${liveElapsedLabel})`
-              : sessionTotalMinutes !== null
-                ? `${t("sessionLabel")}: ${formatSavedSession(sessionTotalMinutes)}`
-                : t("startSessionTimer")}
-          </button>
-        </div>
-      )}
+        <div className="flex flex-col items-center gap-2 mb-2">
+          <p className="text-sm text-chalkdim">
+            {t("sessionTimerLabel")}: {liveTimeLabel}
+          </p>
 
-      {showEndConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
-          <div className="bg-panel border border-hairline rounded-xl p-5 max-w-xs w-full">
-            <p className="text-chalk text-sm mb-4">{t("endTimerQuestion")}</p>
-            <div className="flex flex-col gap-2">
+          {sessionState === "idle" && (
+            <button
+              onClick={handleStartSession}
+              aria-label={t("startSessionTimer")}
+              className="w-14 h-14 flex items-center justify-center text-chalk"
+            >
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </button>
+          )}
+
+          {sessionState === "running" && (
+            <button
+              onClick={handlePauseSession}
+              aria-label={t("pauseSessionTimer")}
+              className="w-14 h-14 flex items-center justify-center text-chalk"
+            >
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="5" width="4" height="14" />
+                <rect x="14" y="5" width="4" height="14" />
+              </svg>
+            </button>
+          )}
+
+          {sessionState === "paused" && (
+            <div className="flex gap-2">
               <button
-                onClick={() => setShowEndConfirm(false)}
-                className="rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
+                onClick={handleResumeSession}
+                className="flex items-center gap-1.5 rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-chalk"
               >
-                {t("continueTimer")}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                {t("resume")}
               </button>
               <button
-                onClick={() => {
-                  setShowEndConfirm(false);
-                  endSessionTimer();
-                }}
-                className="rounded-lg bg-brass text-chalk py-2 text-sm font-semibold"
+                onClick={() => setShowFinalizeConfirm(true)}
+                className="flex items-center gap-1.5 rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-chalk"
               >
-                {t("stopCurrentTimer")}
-              </button>
-              <button
-                onClick={() => {
-                  setShowEndConfirm(false);
-                  startSessionTimer();
-                }}
-                className="rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
-              >
-                {t("startNewSession")}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 3v18" />
+                  <path d="M4 4h13l-2.5 3.5L17 11H4" />
+                </svg>
+                {t("finalize")}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {showRestartConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
-          <div className="bg-panel border border-hairline rounded-xl p-5 max-w-xs w-full">
-            <p className="text-chalk text-sm mb-4">{t("restartSessionQuestion")}</p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => setShowRestartConfirm(false)}
-                className="rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
-              >
-                {t("keepSavedSession")}
-              </button>
-              <button
-                onClick={() => {
-                  setShowRestartConfirm(false);
-                  startSessionTimer();
-                }}
-                className="rounded-lg bg-brass text-chalk py-2 text-sm font-semibold"
-              >
-                {t("startNewSession")}
-              </button>
-            </div>
-          </div>
+          {sessionState === "finished" && <p className="text-sm font-semibold text-chalk">{t("wellDone")}</p>}
         </div>
       )}
 
@@ -394,10 +386,35 @@ export default function Today() {
       </div>
 
       {!isRestDay && <FloatingTimer />}
+      {showFinalizeConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
+          <div className="bg-panel border border-hairline rounded-xl p-5 max-w-xs w-full">
+            <p className="text-chalk text-sm mb-4">{t("confirmFinalizeQuestion")}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowFinalizeConfirm(false)}
+                className="flex-1 rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
+              >
+                {t("no")}
+              </button>
+              <button
+                onClick={() => {
+                  setShowFinalizeConfirm(false);
+                  handleFinalizeSession();
+                }}
+                className="flex-1 rounded-lg bg-brass text-chalk py-2 text-sm font-semibold"
+              >
+                {t("yes")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showRecapModal && (
         <SessionRecapModal
           dayName={dayLabel || DAYS[dayIndex]}
-          sessionMinutes={sessionTotalMinutes ?? 0}
+          sessionMinutes={sessionMinutes}
           onClose={() => setShowRecapModal(false)}
         />
       )}
