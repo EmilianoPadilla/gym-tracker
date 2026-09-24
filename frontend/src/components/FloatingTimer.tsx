@@ -124,7 +124,7 @@ export default function FloatingTimer() {
       <div className="relative w-16 h-16">
         <button
           onClick={() => (running ? cancelTimer() : setOpen((o) => !o))}
-          className={`w-16 h-16 rounded-full border shadow-lg flex flex-col items-center justify-center gap-0.5 ${
+          className={`w-16 h-16 rounded-full border shadow-lg flex flex-col  items-center justify-center gap-0.5 ${
             running ? "bg-panelraised border-brasslight text-chalk" : "bg-panel border-hairline text-chalkdim"
           }`}
         >
@@ -132,7 +132,7 @@ export default function FloatingTimer() {
           <span className="font-display font-semibold text-xs">{formatClock(displaySeconds)}</span>
         </button>
       </div>
-      <span className="text-xs text-chalkdim tracking-wide bg-panel border border-hairline rounded-full px-3 py-1 shadow-lg">
+      <span className="text-xs text-chalkdim tracking-wide bg-panel  rounded-full -mt-2 z-10 px-3 py-1 shadow-lg">
         {t("customTimer")}
       </span>
     </div>

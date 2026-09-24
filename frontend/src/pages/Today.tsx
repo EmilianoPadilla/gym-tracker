@@ -260,10 +260,10 @@ export default function Today() {
                 startSessionTimer();
               }
             }}
-            className="rounded-lg font-semibold py-2 px-5 text-sm text-black shadow-md"
+            className="rounded-lg font-semibold py-2 px-5 text-sm text-white shadow-md"
             style={{
               background:
-                "linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 45%), linear-gradient(180deg, #e8e8e8 0%, #a9a9a9 100%)",
+                "linear-gradient(180deg, rgba(120, 116, 182, 0.65) 0%, rgba(221, 221, 228, 0) 45%), linear-gradient(180deg, #2320d8 0%, #2232c0 100%)",
             }}
           >
             {sessionRunning
@@ -279,21 +279,30 @@ export default function Today() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
           <div className="bg-panel border border-hairline rounded-xl p-5 max-w-xs w-full">
             <p className="text-chalk text-sm mb-4">{t("endTimerQuestion")}</p>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
               <button
                 onClick={() => setShowEndConfirm(false)}
-                className="flex-1 rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
+                className="rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
               >
-                {t("no")}
+                {t("continueTimer")}
               </button>
               <button
                 onClick={() => {
                   setShowEndConfirm(false);
                   endSessionTimer();
                 }}
-                className="flex-1 rounded-lg bg-brass text-chalk py-2 text-sm font-semibold"
+                className="rounded-lg bg-brass text-chalk py-2 text-sm font-semibold"
               >
-                {t("yes")}
+                {t("stopCurrentTimer")}
+              </button>
+              <button
+                onClick={() => {
+                  setShowEndConfirm(false);
+                  startSessionTimer();
+                }}
+                className="rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
+              >
+                {t("startNewSession")}
               </button>
             </div>
           </div>
@@ -367,13 +376,13 @@ export default function Today() {
                 inputRef={(el) => (inputRefsMap.current[ex.id] = el)}
               />
             ))}
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center mt-6">
               <button
                 onClick={() => setShowRecapModal(true)}
                 aria-label={t("generateSessionImage")}
-                className="w-11 h-11 rounded-xl flex items-center justify-center text-chalk"
+                className="w-14 h-14 rounded-xl flex items-center justify-center text-chalk"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 16V4" />
                   <path d="M8 8l4-4 4 4" />
                   <path d="M4 16v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
