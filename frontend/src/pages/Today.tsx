@@ -21,6 +21,14 @@ function dayOfWeekOf(d: Date): number {
   return jsDay === 0 ? 6 : jsDay - 1; // 0=Monday ... matches backend's day_of_week
 }
 
+function formatSavedSession(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
 export default function Today() {
   const { user, logout } = useAuth();
   const { language, t } = useLanguage();
@@ -35,6 +43,7 @@ export default function Today() {
   const [sessionRunning, setSessionRunning] = useState(false);
   const [sessionTotalMinutes, setSessionTotalMinutes] = useState<number | null>(null);
   const [liveElapsedLabel, setLiveElapsedLabel] = useState("");
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const inputRefsMap = useRef<Record<number, HTMLInputElement | null>>({});
 
   const todayISO = toISODate(new Date());
@@ -67,13 +76,18 @@ export default function Today() {
     function updateLabel() {
       const startedAt = parseInt(localStorage.getItem("gymtracker_session_startedAt") || "0");
       if (!startedAt) return;
-      const elapsedMin = Math.floor((Date.now() - startedAt) / 60000);
-      const h = Math.floor(elapsedMin / 60);
-      const m = elapsedMin % 60;
-      setLiveElapsedLabel(h > 0 ? `${h}h ${m}m` : `${m}m`);
+      const elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
+      const h = Math.floor(elapsedSec / 3600);
+      const m = Math.floor((elapsedSec % 3600) / 60);
+      const s = elapsedSec % 60;
+      setLiveElapsedLabel(
+        h > 0
+          ? `${h}h ${m.toString().padStart(2, "0")}m ${s.toString().padStart(2, "0")}s`
+          : `${m}m ${s.toString().padStart(2, "0")}s`
+      );
     }
     updateLabel();
-    const interval = setInterval(updateLabel, 15000);
+    const interval = setInterval(updateLabel, 1000);
     return () => clearInterval(interval);
   }, [sessionRunning]);
 
@@ -234,14 +248,55 @@ export default function Today() {
       </div>
 
       {isActuallyToday && (
-        <button
-          onClick={sessionRunning ? endSessionTimer : startSessionTimer}
-          className={`w-full mb-2 rounded-lg font-semibold py-2.5 text-sm ${
-            sessionRunning ? "bg-red-800 text-white" : "bg-brass text-chalk"
-          }`}
-        >
-          {sessionRunning ? `${t("endTimer")} (${liveElapsedLabel})` : t("startSessionTimer")}
-        </button>
+        <div className="flex justify-center mb-2">
+          <button
+            onClick={() => {
+              if (sessionRunning) {
+                endSessionTimer();
+              } else if (sessionTotalMinutes !== null) {
+                setShowRestartConfirm(true);
+              } else {
+                startSessionTimer();
+              }
+            }}
+            className="rounded-lg font-semibold py-2 px-5 text-sm text-black shadow-md"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 45%), linear-gradient(180deg, #e8e8e8 0%, #a9a9a9 100%)",
+            }}
+          >
+            {sessionRunning
+              ? `${t("endTimer")} (${liveElapsedLabel})`
+              : sessionTotalMinutes !== null
+                ? `${t("sessionLabel")}: ${formatSavedSession(sessionTotalMinutes)}`
+                : t("startSessionTimer")}
+          </button>
+        </div>
+      )}
+
+      {showRestartConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
+          <div className="bg-panel border border-hairline rounded-xl p-5 max-w-xs w-full">
+            <p className="text-chalk text-sm mb-4">{t("restartSessionQuestion")}</p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setShowRestartConfirm(false)}
+                className="rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
+              >
+                {t("keepSavedSession")}
+              </button>
+              <button
+                onClick={() => {
+                  setShowRestartConfirm(false);
+                  startSessionTimer();
+                }}
+                className="rounded-lg bg-brass text-chalk py-2 text-sm font-semibold"
+              >
+                {t("startNewSession")}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <div className="mt-4 flex-1 pb-28">
@@ -289,8 +344,11 @@ export default function Today() {
             <div className="flex justify-center mt-4">
               <button
                 onClick={() => setShowRecapModal(true)}
-                className="rounded-full px-5 py-2 text-sm font-semibold"
-                style={{ backgroundColor: "#C0C0C0", color: "#000000" }}
+                className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-lg"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 45%), linear-gradient(180deg, #9b6bd9 0%, #6b3fa0 100%)",
+                }}
               >
                 {t("generateSessionImage")}
               </button>

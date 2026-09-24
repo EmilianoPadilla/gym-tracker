@@ -5,7 +5,7 @@ import { Share } from "@capacitor/share";
 import { useLanguage } from "../i18n/LanguageContext";
 import DurationPicker from "./DurationPicker";
 
-type Step = "cardio" | "cardioDuration" | "preview";
+type Step = "totalTimeChoice" | "customDuration" | "cardio" | "cardioDuration" | "preview";
 
 // Total session time: "2h 20m", or just "45m" if under an hour.
 function formatSessionTime(totalMinutes: number): string {
@@ -137,7 +137,10 @@ export default function SessionRecapModal({
   onClose: () => void;
 }) {
   const { t } = useLanguage();
-  const [step, setStep] = useState<Step>("cardio");
+  const [step, setStep] = useState<Step>("totalTimeChoice");
+  const [finalTotalMinutes, setFinalTotalMinutes] = useState(sessionMinutes);
+  const [customHours, setCustomHours] = useState(1);
+  const [customMinutes, setCustomMinutes] = useState(0);
   const [cardioHours, setCardioHours] = useState(0);
   const [cardioMinutes, setCardioMinutes] = useState(20);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -147,7 +150,7 @@ export default function SessionRecapModal({
   async function finishAndGenerate(cardioTime: string | null) {
     setGenerating(true);
     await waitForFont();
-    const url = drawRecapImage(dayName, formatSessionTime(sessionMinutes), cardioTime);
+    const url = drawRecapImage(dayName, formatSessionTime(finalTotalMinutes), cardioTime);
     setImageUrl(url);
     setGenerating(false);
     setStep("preview");
@@ -187,6 +190,53 @@ export default function SessionRecapModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-5">
       <div className="bg-panel border border-hairline rounded-xl p-5 max-w-sm w-full max-h-[90vh] overflow-y-auto">
+        {step === "totalTimeChoice" && (
+          <>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setFinalTotalMinutes(sessionMinutes);
+                  setStep("cardio");
+                }}
+                disabled={sessionMinutes <= 0}
+                className="rounded-lg bg-brass text-chalk font-semibold py-2.5 text-sm disabled:opacity-40 text-left px-4"
+              >
+                {t("useTrackedTime")}: {formatSessionTime(sessionMinutes)}
+              </button>
+              <button
+                onClick={() => setStep("customDuration")}
+                className="rounded-lg border border-hairline text-chalk font-semibold py-2.5 text-sm text-left px-4"
+              >
+                {t("enterCustomTime")}
+              </button>
+            </div>
+            <button onClick={onClose} className="mt-4 text-chalkdim text-sm w-full text-center">
+              {t("cancel")}
+            </button>
+          </>
+        )}
+
+        {step === "customDuration" && (
+          <>
+            <p className="text-chalk font-semibold mb-4">{t("howLongWasYourSession")}</p>
+            <DurationPicker
+              hours={customHours}
+              minutes={customMinutes}
+              onChangeHours={setCustomHours}
+              onChangeMinutes={setCustomMinutes}
+            />
+            <button
+              onClick={() => {
+                setFinalTotalMinutes(customHours * 60 + customMinutes);
+                setStep("cardio");
+              }}
+              className="mt-5 w-full rounded-lg bg-brass text-chalk font-semibold py-2.5 text-sm"
+            >
+              {t("continueLabel")}
+            </button>
+          </>
+        )}
+
         {step === "cardio" && (
           <>
             <p className="text-chalk font-semibold mb-4">{t("didYouDoCardio")}</p>
