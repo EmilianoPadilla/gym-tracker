@@ -21,7 +21,7 @@ function fmtDate(d: string) {
 
 export default function Progress() {
   const { language, t } = useLanguage();
-  const { unit, toDisplay } = useUnits();
+  const { toDisplay } = useUnits();
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
 
   const jsDay = new Date().getDay();
@@ -127,9 +127,7 @@ export default function Progress() {
         <p className="text-chalkdim text-sm text-center py-10">{t("noDataYet")}</p>
       ) : (
         <>
-          <p className="text-xs text-chalkdim mb-3">
-            {t("weight")} ({unit})
-          </p>
+          <p className="text-xs text-chalkdim mb-3">{t("weight")}</p>
           <div className="h-72 -ml-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>

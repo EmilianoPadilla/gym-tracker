@@ -7,6 +7,7 @@ import ExerciseCard from "../components/ExerciseCard";
 import HamburgerMenu from "../components/HamburgerMenu";
 import MarqueeText from "../components/MarqueeText";
 import FloatingTimer from "../components/FloatingTimer";
+import SessionRecapModal from "../components/SessionRecapModal";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -30,6 +31,7 @@ export default function Today() {
   const [isRestDay, setIsRestDay] = useState(false);
   const [labelsLoaded, setLabelsLoaded] = useState(false);
   const [hasAnyRoutine, setHasAnyRoutine] = useState<boolean | null>(null);
+  const [showRecapModal, setShowRecapModal] = useState(false);
   const inputRefsMap = useRef<Record<number, HTMLInputElement | null>>({});
 
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
@@ -203,19 +205,28 @@ export default function Today() {
             </Link>
           </div>
         ) : (
-          exercises.map((ex) => (
-            <ExerciseCard
-              key={ex.id}
-              exercise={ex}
-              logDate={toISODate(viewDate)}
-              onSaved={() => handleSaved(ex.id)}
-              inputRef={(el) => (inputRefsMap.current[ex.id] = el)}
-            />
-          ))
+          <>
+            {exercises.map((ex) => (
+              <ExerciseCard
+                key={ex.id}
+                exercise={ex}
+                logDate={toISODate(viewDate)}
+                onSaved={() => handleSaved(ex.id)}
+                inputRef={(el) => (inputRefsMap.current[ex.id] = el)}
+              />
+            ))}
+            <button
+              onClick={() => setShowRecapModal(true)}
+              className="w-full mt-4 rounded-lg border border-brasslight text-brasslight font-semibold py-2.5 text-sm"
+            >
+              {t("generateSessionImage")}
+            </button>
+          </>
         )}
       </div>
 
       {!isRestDay && <FloatingTimer />}
+      {showRecapModal && <SessionRecapModal onClose={() => setShowRecapModal(false)} />}
 
       <p className="text-center text-[10px] text-chalkdim mt-4 pb-2">{t("developedBy")}</p>
     </div>

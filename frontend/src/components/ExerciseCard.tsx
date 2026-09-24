@@ -93,6 +93,45 @@ export default function ExerciseCard({
   const restDuration = exercise.rest_seconds ?? 90; // sensible default if never set
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  // Long-press (500ms, cancelled by real horizontal scroll movement) on a
+  // history chip asks to delete that specific log entry.
+  function handleChipPointerDown(e: React.PointerEvent, logId: number) {
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let cancelled = false;
+
+    function cleanup() {
+      cancelled = true;
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+      window.removeEventListener("pointercancel", handleUp);
+    }
+    function handleMove(ev: PointerEvent) {
+      if (Math.abs(ev.clientX - startX) > 10 || Math.abs(ev.clientY - startY) > 10) cleanup();
+    }
+    function handleUp() {
+      cleanup();
+    }
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    window.addEventListener("pointercancel", handleUp);
+
+    setTimeout(() => {
+      if (cancelled) return;
+      cleanup();
+      setConfirmDeleteId(logId);
+    }, 500);
+  }
+
+  async function handleConfirmDelete() {
+    if (confirmDeleteId === null) return;
+    await api.deleteLog(confirmDeleteId);
+    setConfirmDeleteId(null);
+    onSaved();
+  }
 
   useEffect(() => {
     return () => {
@@ -214,7 +253,9 @@ export default function ExerciseCard({
               {coloredHistory.slice(0, 12).map((h) => (
                 <div
                   key={h.id}
-                  className="flex-shrink-0 bg-panel border border-hairline rounded-lg px-2.5 py-1 text-center min-w-[54px]"
+                  onPointerDown={(e) => handleChipPointerDown(e, h.id)}
+                  className="flex-shrink-0 bg-panel border border-hairline rounded-lg px-2.5 py-1 text-center min-w-[54px] select-none"
+                  style={{ touchAction: "pan-x" }}
                 >
                   <span className={`font-display block text-sm font-semibold ${colorClasses[h.color]}`}>
                     {kgToUnit(h.weight, unit)} <span className="text-[9px] font-normal">{unit}</span>
@@ -226,6 +267,28 @@ export default function ExerciseCard({
           </>
         )}
       </div>
+
+      {confirmDeleteId !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
+          <div className="bg-panel border border-hairline rounded-xl p-5 max-w-xs w-full">
+            <p className="text-chalk text-sm mb-4">{t("confirmDeleteLog")}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="flex-1 rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
+              >
+                {t("no")}
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 rounded-lg bg-red-800 text-white py-2 text-sm font-semibold"
+              >
+                {t("yes")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
