@@ -37,6 +37,8 @@
 	<true/>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Gym Tracker saves your workout session images to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Gym Tracker saves your workout session images to your photo library.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

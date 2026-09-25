@@ -145,6 +145,7 @@ export default function SessionRecapModal({
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
+  const [saveErrorDetail, setSaveErrorDetail] = useState("");
 
   async function finishAndGenerate(cardioTime: string | null) {
     setGenerating(true);
@@ -173,8 +174,10 @@ export default function SessionRecapModal({
         document.body.removeChild(link);
         setSaveStatus("done");
       }
-    } catch {
+    } catch (err) {
       setSaveStatus("error");
+      const message = err instanceof Error ? err.message : JSON.stringify(err);
+      setSaveErrorDetail(message);
     }
   }
 
@@ -297,7 +300,9 @@ export default function SessionRecapModal({
               </button>
             </div>
             {saveStatus === "error" && (
-              <p className="text-red-400 text-xs text-center mt-2">Something went wrong saving the image.</p>
+              <p className="text-red-400 text-xs text-center mt-2">
+                Something went wrong saving the image.{saveErrorDetail ? ` (${saveErrorDetail})` : ""}
+              </p>
             )}
           </div>
         )}
