@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
+import { Media } from "@capacitor-community/media";
 import { useLanguage } from "../i18n/LanguageContext";
 import DurationPicker from "./DurationPicker";
 
@@ -161,11 +162,19 @@ export default function SessionRecapModal({
     if (!imageUrl) return;
     setSaveStatus("saving");
     try {
-      if (Capacitor.isNativePlatform()) {
-        // Write the file and hand it to the native share sheet, where the
-        // person can choose "Save Image" to put it straight into Photos.
-        const base64 = imageUrl.split(",")[1];
-        const fileName = `gym-tracker-session-${Date.now()}.png`;
+      const platform = Capacitor.getPlatform();
+      const base64 = imageUrl.split(",")[1];
+      const fileName = `gym-tracker-session-${Date.now()}.png`;
+
+      if (platform === "android") {
+        // The "not implemented" error reported earlier was specific to iOS -
+        // Android's native registration for this plugin works normally, and
+        // it saves straight to the gallery with no extra tap needed.
+        await Media.savePhoto({ path: imageUrl });
+        setSaveStatus("done");
+      } else if (platform === "ios") {
+        // Confirmed working: the iOS share sheet has a built-in "Save Image"
+        // action that puts it straight into Photos.
         const result = await Filesystem.writeFile({
           path: fileName,
           data: base64,
