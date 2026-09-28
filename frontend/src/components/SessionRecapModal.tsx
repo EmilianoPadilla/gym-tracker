@@ -547,9 +547,12 @@ export default function SessionRecapModal({
                 disabled={saveStatus === "saving"}
                 className="flex-1 rounded-lg bg-brass text-chalk py-2.5 text-sm font-semibold disabled:opacity-60"
               >
-                {saveStatus === "saving" ? "..." : t("download")}
+                {saveStatus === "saving" ? "..." : saveStatus === "done" ? `✓ ${t("imageSaved")}` : t("download")}
               </button>
             </div>
+            {saveStatus === "done" && (
+              <p className="text-[#8FC97A] text-xs text-center mt-2">{t("imageSaved")}</p>
+            )}
             {saveStatus === "error" && (
               <p className="text-red-400 text-xs text-center mt-2">
                 Something went wrong saving the image.{saveErrorDetail ? ` (${saveErrorDetail})` : ""}
