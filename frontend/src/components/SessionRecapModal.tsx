@@ -34,6 +34,23 @@ function formatCardioTime(hours: number, minutes: number): string {
   return `${hours * 60 + minutes}m`;
 }
 
+const ALBUM_NAME = "Gym Tracker";
+
+// Android's savePhoto() requires a real target album (it rejects with
+// "Album identifier required" if you don't pass one) - this finds the
+// "Gym Tracker" album if it already exists, or creates it the first time,
+// and returns the identifier savePhoto needs.
+async function getOrCreateAlbumId(): Promise<string> {
+  const { albums } = await Media.getAlbums();
+  const existing = albums.find((a) => a.name === ALBUM_NAME);
+  if (existing) return existing.identifier;
+  await Media.createAlbum({ name: ALBUM_NAME });
+  const { albums: refreshed } = await Media.getAlbums();
+  const created = refreshed.find((a) => a.name === ALBUM_NAME);
+  if (!created) throw new Error(`Could not create the "${ALBUM_NAME}" album`);
+  return created.identifier;
+}
+
 async function waitForFont(): Promise<void> {
   try {
     await document.fonts.load("700 80px Oswald");
@@ -344,8 +361,10 @@ export default function SessionRecapModal({
       if (platform === "android") {
         // The "not implemented" error reported earlier was specific to iOS -
         // Android's native registration for this plugin works normally, and
-        // it saves straight to the gallery with no extra tap needed.
-        await Media.savePhoto({ path: imageUrl });
+        // it saves straight to the gallery with no extra tap needed. It does
+        // need a real album identifier though (see getOrCreateAlbumId above).
+        const albumIdentifier = await getOrCreateAlbumId();
+        await Media.savePhoto({ path: imageUrl, albumIdentifier });
         setSaveStatus("done");
       } else if (platform === "ios") {
         // Confirmed working: the iOS share sheet has a built-in "Save Image"
