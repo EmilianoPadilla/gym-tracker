@@ -5,8 +5,20 @@ import { Share } from "@capacitor/share";
 import { Media } from "@capacitor-community/media";
 import { useLanguage } from "../i18n/LanguageContext";
 import DurationPicker from "./DurationPicker";
+import { kgToUnit, type Unit } from "../units/UnitsContext";
 
-type Step = "totalTimeChoice" | "customDuration" | "cardio" | "cardioDuration" | "preview";
+type Step = "totalTimeChoice" | "customDuration" | "cardio" | "cardioDuration" | "templateChoice" | "preview";
+
+type Template = 1 | 2 | 3;
+
+const CHECKERBOARD =
+  "linear-gradient(45deg, #bfbfbf 25%, transparent 25%), linear-gradient(-45deg, #bfbfbf 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #bfbfbf 75%), linear-gradient(-45deg, transparent 75%, #bfbfbf 75%)";
+
+export type ExerciseLogForRecap = {
+  name: string;
+  weightKg: number;
+  unit: Unit;
+};
 
 // Total session time: "2h 20m", or just "45m" if under an hour.
 function formatSessionTime(totalMinutes: number): string {
@@ -70,7 +82,29 @@ function wrapCenteredText(
   }
 }
 
-function drawRecapImage(dayName: string, totalTime: string, cardioTime: string | null): string {
+function drawBrandFooter(ctx: CanvasRenderingContext2D, W: number, dividerY: number, textY: number) {
+  ctx.strokeStyle = "rgba(237, 231, 221, 0.6)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(W / 2 - 60, dividerY);
+  ctx.lineTo(W / 2 + 60, dividerY);
+  ctx.stroke();
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "700 46px Oswald, sans-serif";
+  const brand = "GYM TRACKER";
+  const letterSpacing = 8;
+  ctx.textAlign = "left";
+  const totalWidth = [...brand].reduce((w, c) => w + ctx.measureText(c).width + letterSpacing, -letterSpacing);
+  let x = W / 2 - totalWidth / 2;
+  for (const char of brand) {
+    ctx.fillText(char, x, textY);
+    x += ctx.measureText(char).width + letterSpacing;
+  }
+}
+
+// Template 1: the original stats card (day name, total time, cardio).
+function drawStatsCardImage(dayName: string, totalTime: string, cardioTime: string | null): string {
   const canvas = document.createElement("canvas");
   const W = 1080;
   const H = 1350;
@@ -107,23 +141,139 @@ function drawRecapImage(dayName: string, totalTime: string, cardioTime: string |
     drawStat(ctx, W / 2, statY, "CARDIO", cardioTime);
   }
 
-  ctx.strokeStyle = "rgba(237, 231, 221, 0.6)";
-  ctx.beginPath();
-  ctx.moveTo(W / 2 - 60, H - 160);
-  ctx.lineTo(W / 2 + 60, H - 160);
-  ctx.stroke();
+  drawBrandFooter(ctx, W, H - 160, H - 100);
+
+  return canvas.toDataURL("image/png");
+}
+
+// Template 2: a small-text list of every exercise logged that day, with its
+// weight, under the day title and session time.
+function drawExerciseSummaryImage(
+  dayName: string,
+  totalTime: string,
+  logs: ExerciseLogForRecap[],
+  noExercisesLabel: string
+): string {
+  const W = 1080;
+  const rowHeight = 62;
+  const headerHeight = 520;
+  const footerHeight = 220;
+  const rows = Math.max(logs.length, 1);
+  const H = Math.max(1350, headerHeight + rows * rowHeight + footerHeight);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 3;
+
+  ctx.fillStyle = "#EDE7DD";
+  ctx.font = "600 32px 'Work Sans', sans-serif";
+  ctx.fillText("TODAY'S SESSION", W / 2, 150);
 
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "700 46px Oswald, sans-serif";
-  const brand = "GYM TRACKER";
-  const letterSpacing = 8;
-  ctx.textAlign = "left";
-  const totalWidth = [...brand].reduce((w, c) => w + ctx.measureText(c).width + letterSpacing, -letterSpacing);
-  let x = W / 2 - totalWidth / 2;
-  for (const char of brand) {
-    ctx.fillText(char, x, H - 100);
-    x += ctx.measureText(char).width + letterSpacing;
+  ctx.font = "700 78px Oswald, sans-serif";
+  wrapCenteredText(ctx, dayName.toUpperCase(), W / 2, 230, W - 160, 86);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+  ctx.font = "600 34px 'Work Sans', sans-serif";
+  ctx.fillText(totalTime, W / 2, 380);
+
+  ctx.strokeStyle = "rgba(237, 231, 221, 0.6)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(100, headerHeight - 60);
+  ctx.lineTo(W - 100, headerHeight - 60);
+  ctx.stroke();
+
+  ctx.shadowBlur = 10;
+  let y = headerHeight;
+  if (logs.length === 0) {
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+    ctx.font = "500 30px 'Work Sans', sans-serif";
+    ctx.fillText(noExercisesLabel, W / 2, y + 20);
+  } else {
+    ctx.font = "500 32px 'Work Sans', sans-serif";
+    for (const log of logs) {
+      const weightStr = `${kgToUnit(log.weightKg, log.unit)} ${log.unit}`;
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillText(log.name, 100, y);
+      ctx.textAlign = "right";
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+      ctx.fillText(weightStr, W - 100, y);
+      y += rowHeight;
+    }
   }
+
+  ctx.shadowBlur = 18;
+  drawBrandFooter(ctx, W, H - 130, H - 70);
+
+  return canvas.toDataURL("image/png");
+}
+
+// Template 3: day title, workout time, cardio time and the day's strongest lift.
+function drawStrongestLiftImage(
+  dayName: string,
+  totalTime: string,
+  cardioTime: string | null,
+  strongest: { name: string; display: string } | null,
+  strongestLabel: string
+): string {
+  const canvas = document.createElement("canvas");
+  const W = 1080;
+  const H = 1450;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.textAlign = "center";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.55)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 3;
+
+  ctx.fillStyle = "#EDE7DD";
+  ctx.font = "600 32px 'Work Sans', sans-serif";
+  ctx.fillText("TODAY'S SESSION", W / 2, 190);
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "700 88px Oswald, sans-serif";
+  wrapCenteredText(ctx, dayName.toUpperCase(), W / 2, 300, W - 160, 96);
+
+  ctx.strokeStyle = "rgba(237, 231, 221, 0.6)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(140, 440);
+  ctx.lineTo(W - 140, 440);
+  ctx.stroke();
+
+  let statY = 550;
+  drawStat(ctx, W / 2, statY, "TOTAL TIME", totalTime);
+  statY += 190;
+  if (cardioTime) {
+    drawStat(ctx, W / 2, statY, "CARDIO", cardioTime);
+    statY += 190;
+  }
+
+  if (strongest) {
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.font = "600 34px 'Work Sans', sans-serif";
+    ctx.fillText(strongestLabel.toUpperCase(), W / 2, statY);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "700 58px Oswald, sans-serif";
+    wrapCenteredText(ctx, strongest.name.toUpperCase(), W / 2, statY + 90, W - 200, 64);
+    ctx.font = "600 40px 'Work Sans', sans-serif";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.fillText(strongest.display, W / 2, statY + 200);
+  }
+
+  drawBrandFooter(ctx, W, H - 120, H - 60);
 
   return canvas.toDataURL("image/png");
 }
@@ -131,10 +281,12 @@ function drawRecapImage(dayName: string, totalTime: string, cardioTime: string |
 export default function SessionRecapModal({
   dayName,
   sessionMinutes,
+  exerciseLogs = [],
   onClose,
 }: {
   dayName: string;
   sessionMinutes: number;
+  exerciseLogs?: ExerciseLogForRecap[];
   onClose: () => void;
 }) {
   const { t } = useLanguage();
@@ -144,17 +296,40 @@ export default function SessionRecapModal({
   const [customMinutes, setCustomMinutes] = useState(0);
   const [cardioHours, setCardioHours] = useState(0);
   const [cardioMinutes, setCardioMinutes] = useState(20);
+  const [previews, setPreviews] = useState<Record<Template, string> | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
   const [saveErrorDetail, setSaveErrorDetail] = useState("");
 
-  async function finishAndGenerate(cardioTime: string | null) {
+  const strongestLift =
+    exerciseLogs.length > 0
+      ? exerciseLogs.reduce((max, cur) => (cur.weightKg > max.weightKg ? cur : max))
+      : null;
+
+  // Generates a preview for all 3 templates at once so they can all be shown
+  // side by side, the way Strava lets you flip through its share-image
+  // styles before picking one.
+  async function openTemplateChoice(cardioTime: string | null) {
+    setStep("templateChoice");
     setGenerating(true);
     await waitForFont();
-    const url = drawRecapImage(dayName, formatSessionTime(finalTotalMinutes), cardioTime);
-    setImageUrl(url);
+    const totalTime = formatSessionTime(finalTotalMinutes);
+    const strongestForDraw = strongestLift
+      ? {
+          name: strongestLift.name,
+          display: `${kgToUnit(strongestLift.weightKg, strongestLift.unit)} ${strongestLift.unit}`,
+        }
+      : null;
+    const p1 = drawStatsCardImage(dayName, totalTime, cardioTime);
+    const p2 = drawExerciseSummaryImage(dayName, totalTime, exerciseLogs, t("noExercisesLoggedYet"));
+    const p3 = drawStrongestLiftImage(dayName, totalTime, cardioTime, strongestForDraw, t("strongestLift"));
+    setPreviews({ 1: p1, 2: p2, 3: p3 });
     setGenerating(false);
+  }
+
+  function selectTemplate(id: Template) {
+    if (previews) setImageUrl(previews[id]);
     setStep("preview");
   }
 
@@ -197,6 +372,12 @@ export default function SessionRecapModal({
       setSaveErrorDetail(message);
     }
   }
+
+  const templateOptions: { id: Template; title: string }[] = [
+    { id: 1, title: t("template1Title") },
+    { id: 2, title: t("template2Title") },
+    { id: 3, title: t("template3Title") },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-5">
@@ -253,7 +434,7 @@ export default function SessionRecapModal({
             <p className="text-chalk font-semibold mb-4">{t("didYouDoCardio")}</p>
             <div className="flex gap-2">
               <button
-                onClick={() => finishAndGenerate(null)}
+                onClick={() => openTemplateChoice(null)}
                 className="flex-1 rounded-lg border border-hairline text-chalkdim py-2.5 text-sm font-semibold"
               >
                 {t("no")}
@@ -281,21 +462,55 @@ export default function SessionRecapModal({
               onChangeMinutes={setCardioMinutes}
             />
             <button
-              onClick={() => finishAndGenerate(formatCardioTime(cardioHours, cardioMinutes))}
+              onClick={() => openTemplateChoice(formatCardioTime(cardioHours, cardioMinutes))}
               className="mt-5 w-full rounded-lg bg-brass text-chalk font-semibold py-2.5 text-sm"
             >
-              {generating ? "..." : t("generateImage")}
+              {t("continueLabel")}
             </button>
           </>
         )}
+
+        {step === "templateChoice" &&
+          (generating || !previews ? (
+            <p className="text-chalkdim text-sm text-center py-6">...</p>
+          ) : (
+            <>
+              <p className="text-chalk font-semibold mb-4">{t("chooseImageStyle")}</p>
+              <div className="grid grid-cols-2 gap-3">
+                {templateOptions.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => selectTemplate(opt.id)}
+                    className="rounded-lg overflow-hidden border border-hairline text-left"
+                  >
+                    <div
+                      className="aspect-[4/5] w-full"
+                      style={{
+                        backgroundColor: "#8c8c8c",
+                        backgroundImage: CHECKERBOARD,
+                        backgroundSize: "16px 16px",
+                        backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+                      }}
+                    >
+                      <img src={previews[opt.id]} alt={opt.title} className="w-full h-full object-contain" />
+                    </div>
+                    <p className="text-chalk text-xs font-semibold px-2 py-1.5 truncate">{opt.title}</p>
+                  </button>
+                ))}
+                <div aria-hidden="true" />
+              </div>
+              <button onClick={onClose} className="mt-4 text-chalkdim text-sm w-full text-center">
+                {t("cancel")}
+              </button>
+            </>
+          ))}
 
         {step === "preview" && imageUrl && (
           <div
             className="-m-5 p-5 rounded-xl"
             style={{
               backgroundColor: "#8c8c8c",
-              backgroundImage:
-                "linear-gradient(45deg, #bfbfbf 25%, transparent 25%), linear-gradient(-45deg, #bfbfbf 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #bfbfbf 75%), linear-gradient(-45deg, transparent 75%, #bfbfbf 75%)",
+              backgroundImage: CHECKERBOARD,
               backgroundSize: "20px 20px",
               backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0px",
             }}
