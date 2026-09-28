@@ -8,6 +8,7 @@ import HamburgerMenu from "../components/HamburgerMenu";
 import MarqueeText from "../components/MarqueeText";
 import FloatingTimer from "../components/FloatingTimer";
 import SessionRecapModal from "../components/SessionRecapModal";
+import type { Unit } from "../units/UnitsContext";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -136,6 +137,17 @@ export default function Today() {
     day: "numeric",
   });
 
+  // For the session recap image: whatever weight was actually logged for
+  // each exercise on the day being viewed, in that exercise's own unit -
+  // exercises with nothing logged that day are left out entirely.
+  const recapExerciseLogs = (exercises ?? [])
+    .map((ex) => {
+      const entry = ex.history?.find((h: any) => h.date === toISODate(viewDate));
+      if (!entry) return null;
+      return { name: ex.name as string, weightKg: entry.weight as number, unit: ex.preferred_unit as Unit };
+    })
+    .filter((x): x is { name: string; weightKg: number; unit: Unit } => x !== null);
+
   async function loadForDate(silent = false) {
     if (!silent) setLoading(true);
     try {
@@ -245,7 +257,7 @@ export default function Today() {
       <div className="flex items-center justify-between gap-2 mt-4 mb-2">
         <button
           onClick={goToPreviousDay}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-hairline text-chalkdim text-sm"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-hairline text-chalkdim text-sm flex-shrink-0"
         >
           &lsaquo; {t("previousDay")}
         </button>
@@ -260,71 +272,72 @@ export default function Today() {
         {!isActuallyToday && (
           <button
             onClick={goToNextDay}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-hairline text-chalkdim text-sm"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-hairline text-chalkdim text-sm flex-shrink-0"
           >
             {t("nextDay")} &rsaquo;
           </button>
         )}
-      </div>
 
-      {isActuallyToday && !isRestDay && (
-        <div className="flex flex-col items-center gap-2 mb-2">
-          <p className="text-sm text-chalkdim">
-            {t("sessionTimerLabel")}: {liveTimeLabel}
-          </p>
-
-          {sessionState === "idle" && (
-            <button
-              onClick={handleStartSession}
-              aria-label={t("startSessionTimer")}
-              className="w-14 h-14 flex items-center justify-center text-chalk"
-            >
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </button>
-          )}
-
-          {sessionState === "running" && (
-            <button
-              onClick={handlePauseSession}
-              aria-label={t("pauseSessionTimer")}
-              className="w-14 h-14 flex items-center justify-center text-chalk"
-            >
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="5" width="4" height="14" />
-                <rect x="14" y="5" width="4" height="14" />
-              </svg>
-            </button>
-          )}
-
-          {sessionState === "paused" && (
-            <div className="flex gap-2">
+        {isActuallyToday && !isRestDay && (
+          <div className="flex items-center gap-2 min-w-0 justify-end">
+            {sessionState === "idle" && (
               <button
-                onClick={handleResumeSession}
-                className="flex items-center gap-1.5 rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-chalk"
+                onClick={handleStartSession}
+                aria-label={t("startSessionTimer")}
+                className="flex items-center gap-1.5 text-chalk flex-shrink-0"
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M8 5v14l11-7z" />
                 </svg>
-                {t("resume")}
+                <span className="text-xs text-chalkdim truncate">{liveTimeLabel}</span>
               </button>
-              <button
-                onClick={() => setShowFinalizeConfirm(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-chalk"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 3v18" />
-                  <path d="M4 4h13l-2.5 3.5L17 11H4" />
-                </svg>
-                {t("finalize")}
-              </button>
-            </div>
-          )}
+            )}
 
-          {sessionState === "finished" && <p className="text-sm font-semibold text-chalk">{t("wellDone")}</p>}
-        </div>
-      )}
+            {sessionState === "running" && (
+              <button
+                onClick={handlePauseSession}
+                aria-label={t("pauseSessionTimer")}
+                className="flex items-center gap-1.5 text-chalk flex-shrink-0"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="5" width="4" height="14" />
+                  <rect x="14" y="5" width="4" height="14" />
+                </svg>
+                <span className="text-xs text-chalkdim truncate">{liveTimeLabel}</span>
+              </button>
+            )}
+
+            {sessionState === "paused" && (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="text-xs text-chalkdim truncate">{liveTimeLabel}</span>
+                <button
+                  onClick={handleResumeSession}
+                  aria-label={t("resume")}
+                  className="flex items-center justify-center rounded-lg border border-hairline w-8 h-8 text-chalk flex-shrink-0"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setShowFinalizeConfirm(true)}
+                  aria-label={t("finalize")}
+                  className="flex items-center justify-center rounded-lg border border-hairline w-8 h-8 text-chalk flex-shrink-0"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 3v18" />
+                    <path d="M4 4h13l-2.5 3.5L17 11H4" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {sessionState === "finished" && (
+              <p className="text-xs font-semibold text-chalk flex-shrink-0">{t("wellDone")}</p>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="mt-4 flex-1 pb-28">
         {!labelsLoaded ? null : isRestDay ? (
@@ -415,6 +428,7 @@ export default function Today() {
         <SessionRecapModal
           dayName={dayLabel || DAYS[dayIndex]}
           sessionMinutes={sessionMinutes}
+          exerciseLogs={recapExerciseLogs}
           onClose={() => setShowRecapModal(false)}
         />
       )}
