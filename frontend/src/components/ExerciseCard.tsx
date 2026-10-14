@@ -257,7 +257,7 @@ export default function ExerciseCard({
                   key={h.id}
                   onClick={() => openMenu(h)}
                   className={`relative flex-shrink-0 border rounded-lg px-2.5 py-1 text-center min-w-[54px] select-none cursor-pointer ${
-                    deloadDates?.has(h.date) ? "bg-[#B9A3E3]/25 border-[#B9A3E3]/60" : "bg-panel border-hairline"
+                    deloadDates?.has(h.date) ? "bg-[#C7B2E6]/25 border-[#C7B2E6]/60" : "bg-panel border-hairline"
                   }`}
                   style={{ touchAction: "pan-x" }}
                 >

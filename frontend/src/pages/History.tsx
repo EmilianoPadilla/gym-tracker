@@ -232,7 +232,7 @@ export default function History() {
                 ${isToday ? "border border-brasslight" : "border border-transparent"}
                 ${selectedDate === iso ? "bg-panelraised" : ""}
                 ${isMissed ? "bg-red-900/20" : ""}
-                ${isDeload ? "bg-[#B9A3E3]/30" : ""}
+                ${isDeload ? "bg-[#C7B2E6]/30" : ""}
               `}
             >
               {isRest && !isFuture ? (
@@ -262,7 +262,7 @@ export default function History() {
               type="checkbox"
               checked={deloadDates.has(selectedDate)}
               onChange={() => handleToggleDeload(selectedDate)}
-              className="w-4 h-4 accent-[#B9A3E3]"
+              className="w-4 h-4 accent-[#C7B2E6]"
             />
             {t("deloadDay")}
           </label>

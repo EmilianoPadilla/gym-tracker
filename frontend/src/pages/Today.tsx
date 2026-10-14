@@ -272,20 +272,23 @@ export default function Today() {
             <p className="text-chalkdim text-sm mt-1 truncate">
               {dateStr} &middot; {user?.name}
             </p>
-            {labelsLoaded && !isRestDay && (
-              <label className="flex items-center gap-2 mt-1.5 text-sm text-chalkdim cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isDeloadView}
-                  onChange={handleToggleDeload}
-                  className="w-4 h-4 accent-[#B9A3E3]"
-                />
-                {t("deloadDay")}
-              </label>
-            )}
           </div>
         </div>
         <HamburgerMenu items={menuItems} />
+      </div>
+
+      <div className="flex justify-center mt-3">
+        {labelsLoaded && !isRestDay && (
+          <label className="flex items-center gap-2 text-sm text-chalkdim cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isDeloadView}
+              onChange={handleToggleDeload}
+              className="w-4 h-4 accent-[#C7B2E6]"
+            />
+            {t("deloadDay")}
+          </label>
+        )}
       </div>
 
       <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 mt-4 mb-2">
