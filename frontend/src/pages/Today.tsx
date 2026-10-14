@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
@@ -38,7 +38,7 @@ export default function Today() {
   const [sessionState, setSessionState] = useState<"idle" | "running" | "paused" | "finished">("idle");
   const [sessionMinutes, setSessionMinutes] = useState(0);
   const [liveTimeLabel, setLiveTimeLabel] = useState("0h 0m 0s");
-  const inputRefsMap = useRef<Record<number, HTMLInputElement | null>>({});
+  const [deloadDates, setDeloadDates] = useState<Set<string>>(new Set());
 
   function formatHMS(totalMs: number): string {
     const totalSeconds = Math.floor(totalMs / 1000);
@@ -198,20 +198,40 @@ export default function Today() {
     });
   }
 
-  function handleSaved(exerciseId: number) {
+  function handleSaved() {
     loadForDate(true);
-    if (!exercises) return;
-    const idx = exercises.findIndex((e) => e.id === exerciseId);
-    if (idx >= 0 && idx < exercises.length - 1) {
-      const nextId = exercises[idx + 1].id;
-      setTimeout(() => {
-        const el = inputRefsMap.current[nextId];
-        if (el) {
-          el.focus();
-          el.select();
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }, 50);
+  }
+
+  // Deload markers for roughly the window the previous-weights chips cover.
+  useEffect(() => {
+    const start = new Date();
+    start.setDate(start.getDate() - 60);
+    api
+      .getDeloadDays(toISODate(start), toISODate(new Date()))
+      .then((dates) => setDeloadDates(new Set(dates)))
+      .catch(() => {});
+  }, []);
+
+  const viewISO = toISODate(viewDate);
+  const isDeloadView = deloadDates.has(viewISO);
+
+  async function handleToggleDeload() {
+    const next = !isDeloadView;
+    setDeloadDates((prev) => {
+      const copy = new Set(prev);
+      if (next) copy.add(viewISO);
+      else copy.delete(viewISO);
+      return copy;
+    });
+    try {
+      await api.setDeloadDay(viewISO, next);
+    } catch {
+      setDeloadDates((prev) => {
+        const copy = new Set(prev);
+        if (next) copy.delete(viewISO);
+        else copy.add(viewISO);
+        return copy;
+      });
     }
   }
 
@@ -246,9 +266,24 @@ export default function Today() {
                 className="font-display text-4xl font-semibold"
               />
             </Link>
-            <p className="text-chalkdim text-sm mt-1 truncate">
-              {dateStr} &middot; {user?.name}
-            </p>
+            <div className="flex items-center gap-2 mt-1 min-w-0">
+              <p className="text-chalkdim text-sm truncate">
+                {dateStr} &middot; {user?.name}
+              </p>
+              {labelsLoaded && !isRestDay && (
+                <button
+                  onClick={handleToggleDeload}
+                  aria-pressed={isDeloadView}
+                  className={`flex-shrink-0 text-[11px] px-2 py-0.5 rounded-full border font-medium ${
+                    isDeloadView
+                      ? "bg-[#B9A3E3]/30 border-[#B9A3E3] text-[#D9CBF5]"
+                      : "border-hairline text-chalkdim"
+                  }`}
+                >
+                  {t("deloadDay")}
+                </button>
+              )}
+            </div>
           </div>
         </div>
         <HamburgerMenu items={menuItems} />
@@ -377,8 +412,8 @@ export default function Today() {
                 key={ex.id}
                 exercise={ex}
                 logDate={toISODate(viewDate)}
-                onSaved={() => handleSaved(ex.id)}
-                inputRef={(el) => (inputRefsMap.current[ex.id] = el)}
+                deloadDates={deloadDates}
+                onSaved={handleSaved}
               />
             ))}
             <div className="flex justify-center mt-6">

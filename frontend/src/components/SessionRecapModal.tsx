@@ -5,7 +5,7 @@ import { Share } from "@capacitor/share";
 import { Media } from "@capacitor-community/media";
 import { useLanguage } from "../i18n/LanguageContext";
 import DurationPicker from "./DurationPicker";
-import { kgToUnit, type Unit } from "../units/UnitsContext";
+import type { Unit } from "../units/UnitsContext";
 
 type Step = "totalTimeChoice" | "customDuration" | "cardio" | "cardioDuration" | "templateChoice" | "preview";
 
@@ -217,7 +217,7 @@ function drawExerciseSummaryImage(
   } else {
     ctx.font = "500 32px 'Work Sans', sans-serif";
     for (const log of logs) {
-      const weightStr = `${kgToUnit(log.weightKg, log.unit)} ${log.unit}`;
+      const weightStr = `${log.weightKg} ${log.unit}`;
       ctx.textAlign = "left";
       ctx.fillStyle = "#FFFFFF";
       ctx.fillText(log.name, 100, y);
@@ -335,7 +335,7 @@ export default function SessionRecapModal({
     const strongestForDraw = strongestLift
       ? {
           name: strongestLift.name,
-          display: `${kgToUnit(strongestLift.weightKg, strongestLift.unit)} ${strongestLift.unit}`,
+          display: `${strongestLift.weightKg} ${strongestLift.unit}`,
         }
       : null;
     const p1 = drawStatsCardImage(dayName, totalTime, cardioTime);

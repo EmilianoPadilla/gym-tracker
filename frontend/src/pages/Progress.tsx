@@ -3,7 +3,6 @@ import BackToStartLink from "../components/BackToStartLink";
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from "recharts";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
-import { useUnits } from "../units/UnitsContext";
 
 const DAYS_EN = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const DAYS_ES = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -21,7 +20,6 @@ function fmtDate(d: string) {
 
 export default function Progress() {
   const { language, t } = useLanguage();
-  const { toDisplay } = useUnits();
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
 
   const jsDay = new Date().getDay();
@@ -75,7 +73,7 @@ export default function Progress() {
     const row: Record<string, string | number> = { date: fmtDate(date) };
     exercises.forEach((ex) => {
       const point = ex.history.find((h) => h.date === date);
-      if (point) row[ex.name] = toDisplay(point.weight);
+      if (point) row[ex.name] = point.weight;
     });
     return row;
   });

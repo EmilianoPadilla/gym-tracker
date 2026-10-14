@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import BackToStartLink from "../components/BackToStartLink";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
-import { kgToUnit, unitToKg } from "../units/UnitsContext";
 
 const WEEKDAY_HEADERS_EN = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const WEEKDAY_HEADERS_ES = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
@@ -57,6 +56,7 @@ export default function History() {
   const [dayLogs, setDayLogs] = useState<DayLog[] | null>(null);
   const [routine, setRoutine] = useState<{ id: number; name: string; preferred_unit: "kg" | "lbs" }[]>([]);
   const [restDays, setRestDays] = useState<Set<number>>(new Set());
+  const [deloadDates, setDeloadDates] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     api.getDayLabels().then((rows: { day_of_week: number; is_rest_day: boolean }[]) => {
@@ -78,6 +78,13 @@ export default function History() {
   async function loadSummary() {
     const res = await api.getCalendarSummary(viewYear, viewMonth);
     setDatesWithLogs(new Set(res.dates_with_logs));
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const lastDay = new Date(viewYear, viewMonth, 0).getDate();
+    const deloads = await api.getDeloadDays(
+      `${viewYear}-${pad(viewMonth)}-01`,
+      `${viewYear}-${pad(viewMonth)}-${pad(lastDay)}`
+    );
+    setDeloadDates(new Set(deloads));
   }
 
   useEffect(() => {
@@ -122,17 +129,17 @@ export default function History() {
     loadSummary();
   }
 
-  async function handleAddForExercise(exerciseId: number, displayValue: string, unit: "kg" | "lbs") {
+  async function handleAddForExercise(exerciseId: number, displayValue: string) {
     const value = parseFloat(displayValue);
     if (!value || !selectedDate) return;
-    await api.addLog(exerciseId, unitToKg(value, unit), undefined, undefined, selectedDate);
+    await api.addLog(exerciseId, value, undefined, undefined, selectedDate);
     refreshDay();
   }
 
-  async function handleUpdateWeight(logId: number, displayValue: string, unit: "kg" | "lbs") {
+  async function handleUpdateWeight(logId: number, displayValue: string) {
     const value = parseFloat(displayValue);
     if (!value) return;
-    await api.updateLog(logId, { weight: unitToKg(value, unit) });
+    await api.updateLog(logId, { weight: value });
     refreshDay();
   }
 
@@ -192,6 +199,7 @@ export default function History() {
           const jsWeekday = d.getDay(); // 0=Sunday
           const dayOfWeek = jsWeekday === 0 ? 6 : jsWeekday - 1; // 0=Monday, matches backend
           const isRest = restDays.has(dayOfWeek);
+          const isDeload = deloadDates.has(iso);
           const isMissed = !isFuture && !isRest && !hasLogs;
 
           return (
@@ -204,6 +212,7 @@ export default function History() {
                 ${isToday ? "border border-brasslight" : "border border-transparent"}
                 ${selectedDate === iso ? "bg-panelraised" : ""}
                 ${isMissed ? "bg-red-900/20" : ""}
+                ${isDeload ? "bg-[#B9A3E3]/30" : ""}
               `}
             >
               {isRest && !isFuture ? (
@@ -241,15 +250,15 @@ export default function History() {
                   <div className="relative flex-shrink-0">
                     <input
                       type="number"
-                      defaultValue={log ? kgToUnit(log.weight, ex.preferred_unit) : ""}
+                      defaultValue={log ? log.weight : ""}
                       placeholder="-"
                       onBlur={(e) => {
                         const value = e.target.value;
                         if (!value) return;
                         if (log) {
-                          handleUpdateWeight(log.id, value, ex.preferred_unit);
+                          handleUpdateWeight(log.id, value);
                         } else {
-                          handleAddForExercise(ex.id, value, ex.preferred_unit);
+                          handleAddForExercise(ex.id, value);
                         }
                       }}
                       onKeyDown={(e) => {

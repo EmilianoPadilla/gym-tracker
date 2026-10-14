@@ -31,8 +31,10 @@ type ExerciseItem = {
   preferred_unit: "kg" | "lbs";
   custom_image: string | null;
   rest_seconds: number | null;
+  target_sets: number | null;
 };
 
+const SET_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const REST_OPTIONS = [30, 60, 90, 120, 150, 180, 210, 240];
 
 function formatRest(seconds: number): string {
@@ -59,12 +61,14 @@ function ExerciseRow({
   onRemove,
   onToggleUnit,
   onRestChange,
+  onSetsChange,
   t,
 }: {
   ex: ExerciseItem;
   onRemove: (id: number) => void;
   onToggleUnit: (id: number, unit: "kg" | "lbs") => void;
   onRestChange: (id: number, restSeconds: number) => void;
+  onSetsChange: (id: number, sets: number | null) => void;
   t: (key: TranslationKey) => string;
 }) {
   const controls = useDragControls();
@@ -139,6 +143,19 @@ function ExerciseRow({
             </option>
           ))}
         </select>
+        <span className="text-xs text-chalkdim flex-shrink-0 ml-1">{t("setsPerExercise")}:</span>
+        <select
+          value={ex.target_sets ?? ""}
+          onChange={(e) => onSetsChange(ex.id, e.target.value === "" ? null : parseInt(e.target.value))}
+          className="text-sm font-semibold px-3 py-1.5 rounded-lg bg-panelraised border border-brasslight text-chalk"
+        >
+          <option value="">--</option>
+          {SET_OPTIONS.map((n) => (
+            <option key={n} value={n}>
+              x{n}
+            </option>
+          ))}
+        </select>
       </div>
     </Reorder.Item>
   );
@@ -205,6 +222,11 @@ export default function Routine() {
   async function handleRestChange(id: number, restSeconds: number) {
     setExercises((prev) => prev.map((ex) => (ex.id === id ? { ...ex, rest_seconds: restSeconds } : ex)));
     await api.updateExerciseRest(id, restSeconds);
+  }
+
+  async function handleSetsChange(id: number, sets: number | null) {
+    setExercises((prev) => prev.map((ex) => (ex.id === id ? { ...ex, target_sets: sets } : ex)));
+    await api.updateExerciseSets(id, sets);
   }
 
   async function handleRemove(id: number) {
@@ -295,6 +317,7 @@ export default function Routine() {
                       onRemove={handleRemove}
                       onToggleUnit={handleToggleUnit}
                       onRestChange={handleRestChange}
+                      onSetsChange={handleSetsChange}
                       t={t}
                     />
                   ))}

@@ -127,6 +127,7 @@ def get_today(
                 preferred_unit=ex.preferred_unit,
                 custom_image=ex.custom_image,
                 rest_seconds=ex.rest_seconds,
+                target_sets=ex.target_sets,
                 latest_weight=history[0].weight if history else None,
                 latest_date=history[0].date if history else None,
                 streak=streak,

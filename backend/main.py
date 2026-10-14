@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from sqlalchemy import inspect, text
 from database import Base, engine
 import models
 from routers import (
@@ -11,9 +12,22 @@ from routers import (
     day_labels_router,
     history_router,
     progress_router,
+    deload_router,
 )
 
 Base.metadata.create_all(bind=engine)
+
+
+def _ensure_columns():
+    """create_all never alters existing tables, so add newly introduced columns idempotently."""
+    insp = inspect(engine)
+    cols = {c["name"] for c in insp.get_columns("exercises")}
+    if "target_sets" not in cols:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE exercises ADD COLUMN target_sets INTEGER"))
+
+
+_ensure_columns()
 
 app = FastAPI(title="Gym Tracker API")
 
@@ -32,6 +46,7 @@ app.include_router(body_metrics_router.router)
 app.include_router(day_labels_router.router)
 app.include_router(history_router.router)
 app.include_router(progress_router.router)
+app.include_router(deload_router.router)
 
 
 @app.get("/")

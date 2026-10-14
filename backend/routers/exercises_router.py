@@ -122,6 +122,26 @@ def update_exercise_rest(
     return exercise
 
 
+@router.patch("/{exercise_id}/sets", response_model=schemas.ExerciseOut)
+def update_exercise_sets(
+    exercise_id: int,
+    payload: schemas.ExerciseSetsUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    exercise = (
+        db.query(models.Exercise)
+        .filter(models.Exercise.id == exercise_id, models.Exercise.user_id == current_user.id)
+        .first()
+    )
+    if not exercise:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+    exercise.target_sets = payload.target_sets
+    db.commit()
+    db.refresh(exercise)
+    return exercise
+
+
 @router.delete("/{exercise_id}")
 def delete_exercise(
     exercise_id: int,

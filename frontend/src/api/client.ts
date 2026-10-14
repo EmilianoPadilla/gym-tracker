@@ -90,6 +90,17 @@ export const api = {
       body: JSON.stringify({ rest_seconds: restSeconds }),
     }),
 
+  updateExerciseSets: (id: number, targetSets: number | null) =>
+    request(`/exercises/${id}/sets`, {
+      method: "PATCH",
+      body: JSON.stringify({ target_sets: targetSets }),
+    }),
+
+  getDeloadDays: (start: string, end: string): Promise<string[]> =>
+    request(`/deload-days?start=${start}&end=${end}`),
+  setDeloadDay: (dateStr: string, isDeload: boolean) =>
+    request(`/deload-days/${dateStr}`, { method: "PUT", body: JSON.stringify({ is_deload: isDeload }) }),
+
   deleteExercise: (id: number) => request(`/exercises/${id}`, { method: "DELETE" }),
 
   updateExerciseOrder: (id: number, orderIndex: number) =>

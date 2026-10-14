@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { api } from "../api/client";
 import { useLanguage } from "../i18n/LanguageContext";
-import { kgToUnit, unitToKg, type Unit } from "../units/UnitsContext";
+import { type Unit } from "../units/UnitsContext";
 import { getExerciseImage } from "../data/exerciseLibrary";
 import { primeAudioContext, playDoubleBeep } from "../lib/beep";
 import { scheduleRestNotification, cancelRestNotification } from "../lib/nativeTimer";
@@ -15,22 +15,26 @@ type ExerciseWithStreak = {
   preferred_unit: Unit;
   custom_image: string | null;
   rest_seconds: number | null;
+  target_sets?: number | null;
   latest_weight: number | null;
   latest_date: string | null;
   streak: number;
   history: LogEntry[];
 };
 
-type ColoredEntry = LogEntry & { color: "green" | "orange" | "red" };
+type ColoredEntry = LogEntry & { color: "green" | "orange" | "red"; trend: "up" | "down" | "same" | null };
 
-// Streak coloring is computed on the raw (kg) values stored on the backend -
-// unit conversion is purely a display concern and must never affect whether
-// two logged weights count as "the same weight" for progressive overload.
+// Weights are stored exactly as typed (no kg/lbs conversion anywhere), so the
+// streak coloring just compares those raw numbers.
 function colorHistory(history: LogEntry[]): ColoredEntry[] {
   const chronological = [...history].sort((a, b) => a.date.localeCompare(b.date));
   let runWeight: number | null = null;
   let runCount = 0;
+  let prevWeight: number | null = null;
   const colored: ColoredEntry[] = chronological.map((entry) => {
+    const trend: ColoredEntry["trend"] =
+      prevWeight === null ? null : entry.weight < prevWeight ? "down" : entry.weight > prevWeight ? "up" : "same";
+    prevWeight = entry.weight;
     if (entry.weight === runWeight) {
       runCount += 1;
     } else {
@@ -38,7 +42,7 @@ function colorHistory(history: LogEntry[]): ColoredEntry[] {
       runCount = 1;
     }
     const color = runCount === 1 ? "green" : runCount === 2 ? "orange" : "red";
-    return { ...entry, color };
+    return { ...entry, color, trend };
   });
   return colored.reverse();
 }
@@ -74,18 +78,20 @@ export default function ExerciseCard({
   onSaved,
   inputRef,
   logDate,
+  deloadDates,
 }: {
   exercise: ExerciseWithStreak;
   onSaved: () => void;
   inputRef?: (el: HTMLInputElement | null) => void;
   logDate?: string;
+  deloadDates?: Set<string>;
 }) {
   const { t, language } = useLanguage();
   const unit = exercise.preferred_unit;
   const entryForViewedDate = logDate ? exercise.history.find((h) => h.date === logDate) : undefined;
-  const initialWeightKg = entryForViewedDate?.weight ?? exercise.latest_weight;
+  const initialWeight = entryForViewedDate?.weight ?? exercise.latest_weight;
   const [weight, setWeight] = useState(
-    initialWeightKg != null ? kgToUnit(initialWeightKg, unit).toString() : ""
+    initialWeight != null ? initialWeight.toString() : ""
   );
   const [saving, setSaving] = useState(false);
   const image = exercise.custom_image || getExerciseImage(exercise.name);
@@ -93,43 +99,33 @@ export default function ExerciseCard({
   const restDuration = exercise.rest_seconds ?? 90; // sensible default if never set
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [menuEntry, setMenuEntry] = useState<LogEntry | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
 
-  // Long-press (500ms, cancelled by real horizontal scroll movement) on a
-  // history chip asks to delete that specific log entry.
-  function handleChipPointerDown(e: React.PointerEvent, logId: number) {
-    const startX = e.clientX;
-    const startY = e.clientY;
-    let cancelled = false;
-
-    function cleanup() {
-      cancelled = true;
-      window.removeEventListener("pointermove", handleMove);
-      window.removeEventListener("pointerup", handleUp);
-      window.removeEventListener("pointercancel", handleUp);
-    }
-    function handleMove(ev: PointerEvent) {
-      if (Math.abs(ev.clientX - startX) > 10 || Math.abs(ev.clientY - startY) > 10) cleanup();
-    }
-    function handleUp() {
-      cleanup();
-    }
-
-    window.addEventListener("pointermove", handleMove);
-    window.addEventListener("pointerup", handleUp);
-    window.addEventListener("pointercancel", handleUp);
-
-    setTimeout(() => {
-      if (cancelled) return;
-      cleanup();
-      setConfirmDeleteId(logId);
-    }, 500);
+  function openMenu(entry: LogEntry) {
+    setMenuEntry(entry);
+    setEditing(false);
+    setEditValue(entry.weight.toString());
   }
 
-  async function handleConfirmDelete() {
-    if (confirmDeleteId === null) return;
-    await api.deleteLog(confirmDeleteId);
-    setConfirmDeleteId(null);
+  function closeMenu() {
+    setMenuEntry(null);
+    setEditing(false);
+  }
+
+  async function handleDeleteEntry() {
+    if (!menuEntry) return;
+    await api.deleteLog(menuEntry.id);
+    closeMenu();
+    onSaved();
+  }
+
+  async function handleEditEntry() {
+    const value = parseFloat(editValue);
+    if (!menuEntry || !value || value <= 0) return;
+    await api.updateLog(menuEntry.id, { weight: value });
+    closeMenu();
     onSaved();
   }
 
@@ -144,7 +140,7 @@ export default function ExerciseCard({
     if (!displayValue || displayValue <= 0) return;
     setSaving(true);
     try {
-      await api.addLog(exercise.id, unitToKg(displayValue, unit), undefined, undefined, logDate);
+      await api.addLog(exercise.id, displayValue, undefined, undefined, logDate);
       onSaved();
     } finally {
       setSaving(false);
@@ -194,7 +190,14 @@ export default function ExerciseCard({
         )}
 
         <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-          <MarqueeText text={exercise.name} className="font-bold text-lg leading-tight" />
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <MarqueeText text={exercise.name} className="font-bold text-lg leading-tight min-w-0" />
+            {exercise.target_sets ? (
+              <span className="font-display text-sm font-semibold text-chalkdim flex-shrink-0">
+                x{exercise.target_sets}
+              </span>
+            ) : null}
+          </div>
 
           <div className="grid grid-cols-2 gap-1.5">
             <div className="relative">
@@ -204,7 +207,6 @@ export default function ExerciseCard({
                 inputMode="decimal"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
-                onBlur={handleSave}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -253,12 +255,23 @@ export default function ExerciseCard({
               {coloredHistory.slice(0, 12).map((h) => (
                 <div
                   key={h.id}
-                  onPointerDown={(e) => handleChipPointerDown(e, h.id)}
-                  className="flex-shrink-0 bg-panel border border-hairline rounded-lg px-2.5 py-1 text-center min-w-[54px] select-none"
+                  onClick={() => openMenu(h)}
+                  className={`relative flex-shrink-0 border rounded-lg px-2.5 py-1 text-center min-w-[54px] select-none cursor-pointer ${
+                    deloadDates?.has(h.date) ? "bg-[#B9A3E3]/25 border-[#B9A3E3]/60" : "bg-panel border-hairline"
+                  }`}
                   style={{ touchAction: "pan-x" }}
                 >
+                  {h.trend && (
+                    <span
+                      className={`absolute top-0.5 right-1 text-[10px] font-bold leading-none ${
+                        h.trend === "same" ? "text-[#E8C547]" : "text-[#E37568]"
+                      }`}
+                    >
+                      {h.trend === "down" ? "\u2193" : h.trend === "up" ? "\u2191" : "="}
+                    </span>
+                  )}
                   <span className={`font-display block text-sm font-semibold ${colorClasses[h.color]}`}>
-                    {kgToUnit(h.weight, unit)} <span className="text-[9px] font-normal">{unit}</span>
+                    {h.weight} <span className="text-[9px] font-normal">{unit}</span>
                   </span>
                   <span className="block text-[10px] text-chalkdim mt-0.5">{fmtDate(h.date, language, t("today"))}</span>
                 </div>
@@ -268,24 +281,72 @@ export default function ExerciseCard({
         )}
       </div>
 
-      {confirmDeleteId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6">
-          <div className="bg-panel border border-hairline rounded-xl p-5 max-w-xs w-full">
-            <p className="text-chalk text-sm mb-4">{t("confirmDeleteLog")}</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setConfirmDeleteId(null)}
-                className="flex-1 rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
-              >
-                {t("no")}
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="flex-1 rounded-lg bg-red-800 text-white py-2 text-sm font-semibold"
-              >
-                {t("yes")}
-              </button>
-            </div>
+      {menuEntry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6" onClick={closeMenu}>
+          <div
+            className="bg-panel border border-hairline rounded-xl p-5 max-w-xs w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-chalkdim text-xs mb-3">
+              {exercise.name} &middot; {menuEntry.weight} {unit} &middot; {fmtDate(menuEntry.date, language, t("today"))}
+            </p>
+            {editing ? (
+              <>
+                <p className="text-chalk text-sm mb-2">{t("editWeight")}</p>
+                <div className="relative mb-3">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    autoFocus
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleEditEntry();
+                      }
+                    }}
+                    className="w-full font-display text-sm font-semibold rounded-lg bg-panelraised border border-hairline pl-2 pr-8 py-2 focus:outline-none focus:border-brasslight"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-chalkdim text-sm">{unit}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={closeMenu}
+                    className="flex-1 rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
+                  >
+                    {t("cancel")}
+                  </button>
+                  <button
+                    onClick={handleEditEntry}
+                    className="flex-1 rounded-lg bg-brass text-chalk py-2 text-sm font-semibold"
+                  >
+                    {t("save")}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => setEditing(true)}
+                  className="rounded-lg bg-brass text-chalk py-2 text-sm font-semibold"
+                >
+                  {t("editRecord")}
+                </button>
+                <button
+                  onClick={handleDeleteEntry}
+                  className="rounded-lg bg-red-800 text-white py-2 text-sm font-semibold"
+                >
+                  {t("deleteRecord")}
+                </button>
+                <button
+                  onClick={closeMenu}
+                  className="rounded-lg border border-hairline text-chalkdim py-2 text-sm font-semibold"
+                >
+                  {t("cancel")}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -45,6 +45,7 @@ class Exercise(Base):
     preferred_unit = Column(String, default="kg", nullable=False)
     custom_image = Column(Text, nullable=True)  # base64 data URL, overrides the library image if set
     rest_seconds = Column(Integer, nullable=True)  # rest timer duration between sets, in seconds
+    target_sets = Column(Integer, nullable=True)  # planned number of sets (shown as "x3")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     owner = relationship("User", back_populates="exercises")
@@ -64,6 +65,15 @@ class Log(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     exercise = relationship("Exercise", back_populates="logs")
+
+
+class DeloadDay(Base):
+    """A specific calendar date the user marked as a deload day."""
+    __tablename__ = "deload_days"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    date = Column(Date, nullable=False)
 
 
 class BodyMetric(Base):
