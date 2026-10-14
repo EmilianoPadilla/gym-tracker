@@ -149,6 +149,26 @@ export default function History() {
     refreshDay();
   }
 
+  async function handleToggleDeload(dateStr: string) {
+    const next = !deloadDates.has(dateStr);
+    setDeloadDates((prev) => {
+      const copy = new Set(prev);
+      if (next) copy.add(dateStr);
+      else copy.delete(dateStr);
+      return copy;
+    });
+    try {
+      await api.setDeloadDay(dateStr, next);
+    } catch {
+      setDeloadDates((prev) => {
+        const copy = new Set(prev);
+        if (next) copy.delete(dateStr);
+        else copy.add(dateStr);
+        return copy;
+      });
+    }
+  }
+
   async function handleDelete(logId: number) {
     await api.deleteLog(logId);
     refreshDay();
@@ -236,6 +256,16 @@ export default function History() {
               day: "numeric",
             })}
           </p>
+
+          <label className="flex items-center gap-2 mb-3 text-sm text-chalkdim cursor-pointer">
+            <input
+              type="checkbox"
+              checked={deloadDates.has(selectedDate)}
+              onChange={() => handleToggleDeload(selectedDate)}
+              className="w-4 h-4 accent-[#B9A3E3]"
+            />
+            {t("deloadDay")}
+          </label>
 
           {dayLogs === null ? (
             <p className="text-chalkdim text-sm">Loading...</p>

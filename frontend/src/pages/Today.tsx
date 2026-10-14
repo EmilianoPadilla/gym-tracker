@@ -269,24 +269,20 @@ export default function Today() {
                 className="font-display text-4xl font-semibold"
               />
             </Link>
-            <div className="flex items-center gap-2 mt-1 min-w-0">
-              <p className="text-chalkdim text-sm truncate">
-                {dateStr} &middot; {user?.name}
-              </p>
-              {labelsLoaded && !isRestDay && (
-                <button
-                  onClick={handleToggleDeload}
-                  aria-pressed={isDeloadView}
-                  className={`flex-shrink-0 text-xs px-2.5 py-1 rounded-full border font-semibold ${
-                    isDeloadView
-                      ? "bg-[#B9A3E3] border-[#B9A3E3] text-charcoal"
-                      : "border-[#B9A3E3] text-[#D9CBF5] bg-[#B9A3E3]/10"
-                  }`}
-                >
-                  {t("deloadDay")}
-                </button>
-              )}
-            </div>
+            <p className="text-chalkdim text-sm mt-1 truncate">
+              {dateStr} &middot; {user?.name}
+            </p>
+            {labelsLoaded && !isRestDay && (
+              <label className="flex items-center gap-2 mt-1.5 text-sm text-chalkdim cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isDeloadView}
+                  onChange={handleToggleDeload}
+                  className="w-4 h-4 accent-[#B9A3E3]"
+                />
+                {t("deloadDay")}
+              </label>
+            )}
           </div>
         </div>
         <HamburgerMenu items={menuItems} />
