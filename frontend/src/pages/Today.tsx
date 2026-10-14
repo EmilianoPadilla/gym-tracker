@@ -132,6 +132,9 @@ export default function Today() {
   const DAYS = language === "es" ? DAYS_ES : DAYS_EN;
   const dayIndex = dayOfWeekOf(viewDate);
   const isActuallyToday = toISODate(viewDate) === toISODate(new Date());
+  const tomorrowDate = new Date();
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const canGoNext = toISODate(viewDate) < toISODate(tomorrowDate); // up to tomorrow, no further
   const dateStr = viewDate.toLocaleDateString(language === "es" ? "es-ES" : "en-US", {
     month: "long",
     day: "numeric",
@@ -190,7 +193,7 @@ export default function Today() {
   }
 
   function goToNextDay() {
-    if (isActuallyToday) return; // never allow logging into the future
+    if (!canGoNext) return; // tomorrow is as far ahead as you can go
     setViewDate((d) => {
       const next = new Date(d);
       next.setDate(next.getDate() + 1);
@@ -207,7 +210,7 @@ export default function Today() {
     const start = new Date();
     start.setDate(start.getDate() - 60);
     api
-      .getDeloadDays(toISODate(start), toISODate(new Date()))
+      .getDeloadDays(toISODate(start), toISODate(new Date(Date.now() + 2 * 86400000)))
       .then((dates) => setDeloadDates(new Set(dates)))
       .catch(() => {});
   }, []);
@@ -274,10 +277,10 @@ export default function Today() {
                 <button
                   onClick={handleToggleDeload}
                   aria-pressed={isDeloadView}
-                  className={`flex-shrink-0 text-[11px] px-2 py-0.5 rounded-full border font-medium ${
+                  className={`flex-shrink-0 text-xs px-2.5 py-1 rounded-full border font-semibold ${
                     isDeloadView
-                      ? "bg-[#B9A3E3]/30 border-[#B9A3E3] text-[#D9CBF5]"
-                      : "border-hairline text-chalkdim"
+                      ? "bg-[#B9A3E3] border-[#B9A3E3] text-charcoal"
+                      : "border-[#B9A3E3] text-[#D9CBF5] bg-[#B9A3E3]/10"
                   }`}
                 >
                   {t("deloadDay")}
@@ -289,32 +292,25 @@ export default function Today() {
         <HamburgerMenu items={menuItems} />
       </div>
 
-      <div className="flex items-center justify-between gap-2 mt-4 mb-2">
+      <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 mt-4 mb-2">
         <button
           onClick={goToPreviousDay}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-hairline text-chalkdim text-sm flex-shrink-0"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-hairline text-chalkdim text-xs"
         >
           &lsaquo; {t("previousDay")}
         </button>
-        {!isActuallyToday && (
-          <button
-            onClick={() => setViewDate(new Date())}
-            className="text-xs px-3 py-1.5 rounded-full border border-brasslight text-brasslight font-medium flex-shrink-0"
-          >
-            {t("today")}
-          </button>
-        )}
-        {!isActuallyToday && (
-          <button
-            onClick={goToNextDay}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-hairline text-chalkdim text-sm flex-shrink-0"
-          >
-            {t("nextDay")} &rsaquo;
-          </button>
-        )}
 
+        <div className="flex items-center justify-center min-w-0">
+          {!isActuallyToday && (
+            <button
+              onClick={() => setViewDate(new Date())}
+              className="text-xs px-3 py-1.5 rounded-full border border-brasslight text-brasslight font-medium"
+            >
+              {t("today")}
+            </button>
+          )}
         {isActuallyToday && !isRestDay && (
-          <div className="flex items-center gap-2 min-w-0 justify-end">
+          <div className="flex items-center gap-2 min-w-0 justify-center">
             {sessionState === "idle" && (
               <button
                 onClick={handleStartSession}
@@ -371,6 +367,18 @@ export default function Today() {
               <p className="text-xs font-semibold text-chalk flex-shrink-0">{t("wellDone")}</p>
             )}
           </div>
+        )}
+        </div>
+
+        {canGoNext ? (
+          <button
+            onClick={goToNextDay}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-hairline text-chalkdim text-xs"
+          >
+            {t("nextDay")} &rsaquo;
+          </button>
+        ) : (
+          <div />
         )}
       </div>
 

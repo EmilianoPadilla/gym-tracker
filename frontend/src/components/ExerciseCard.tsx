@@ -264,7 +264,7 @@ export default function ExerciseCard({
                   {h.trend && (
                     <span
                       className={`absolute top-0.5 right-1 text-[10px] font-bold leading-none ${
-                        h.trend === "same" ? "text-[#E8C547]" : "text-[#E37568]"
+                        h.trend === "same" ? "text-[#E8C547]" : h.trend === "up" ? "text-[#8FC97A]" : "text-[#E37568]"
                       }`}
                     >
                       {h.trend === "down" ? "\u2193" : h.trend === "up" ? "\u2191" : "="}

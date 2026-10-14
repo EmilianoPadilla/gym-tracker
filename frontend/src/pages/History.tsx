@@ -264,7 +264,7 @@ export default function History() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter") e.currentTarget.blur();
                       }}
-                      className="w-16 rounded-md bg-panel border border-hairline pl-2 pr-7 py-1 text-sm text-center"
+                      className="w-24 rounded-md bg-panel border border-hairline pl-2 pr-8 py-1 text-sm text-left"
                     />
                     <span className="absolute right-1 top-1/2 -translate-y-1/2 text-[9px] text-chalkdim pointer-events-none">
                       {ex.preferred_unit}
